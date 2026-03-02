@@ -1,0 +1,20 @@
+// ──────────────────────────────────────────────
+// Schema: API Connections
+// ──────────────────────────────────────────────
+import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
+
+export const apiConnections = sqliteTable("api_connections", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  provider: text("provider", {
+    enum: ["openai", "anthropic", "google", "mistral", "cohere", "openrouter", "custom"],
+  }).notNull(),
+  baseUrl: text("base_url").notNull().default(""),
+  /** Encrypted API key */
+  apiKeyEncrypted: text("api_key_encrypted").notNull().default(""),
+  model: text("model").notNull().default(""),
+  maxContext: integer("max_context").notNull().default(128000),
+  isDefault: text("is_default").notNull().default("false"),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
+});

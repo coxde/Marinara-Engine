@@ -1,0 +1,11 @@
+// ──────────────────────────────────────────────
+// Database Schema — Barrel Export
+// ──────────────────────────────────────────────
+export * from "./chats.js";
+export * from "./characters.js";
+export * from "./lorebooks.js";
+export * from "./prompts.js";
+export * from "./connections.js";
+export * from "./assets.js";
+export * from "./agents.js";
+export * from "./game-state.js";

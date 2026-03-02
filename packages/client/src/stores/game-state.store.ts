@@ -1,0 +1,41 @@
+// ──────────────────────────────────────────────
+// Zustand Store: Game State Slice (RPG Companion)
+// ──────────────────────────────────────────────
+import { create } from "zustand";
+import type { GameState } from "@rpg-engine/shared";
+
+interface GameStateStore {
+  current: GameState | null;
+  isVisible: boolean;
+  expandedSections: Set<string>;
+
+  // Actions
+  setGameState: (state: GameState | null) => void;
+  setVisible: (visible: boolean) => void;
+  toggleSection: (section: string) => void;
+  reset: () => void;
+}
+
+export const useGameStateStore = create<GameStateStore>((set) => ({
+  current: null,
+  isVisible: true,
+  expandedSections: new Set(["location", "characters", "stats"]),
+
+  setGameState: (state) => set({ current: state }),
+  setVisible: (visible) => set({ isVisible: visible }),
+
+  toggleSection: (section) =>
+    set((s) => {
+      const expanded = new Set(s.expandedSections);
+      if (expanded.has(section)) expanded.delete(section);
+      else expanded.add(section);
+      return { expandedSections: expanded };
+    }),
+
+  reset: () =>
+    set({
+      current: null,
+      isVisible: true,
+      expandedSections: new Set(["location", "characters", "stats"]),
+    }),
+}));

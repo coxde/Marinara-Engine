@@ -1,0 +1,21 @@
+// ──────────────────────────────────────────────
+// Connection Zod Schemas
+// ──────────────────────────────────────────────
+import { z } from "zod";
+
+export const apiProviderSchema = z.enum([
+  "openai", "anthropic", "google", "mistral",
+  "cohere", "openrouter", "custom",
+]);
+
+export const createConnectionSchema = z.object({
+  name: z.string().min(1).max(200),
+  provider: apiProviderSchema,
+  baseUrl: z.string().url().or(z.literal("")).default(""),
+  apiKey: z.string().default(""),
+  model: z.string().default(""),
+  maxContext: z.number().int().min(1).default(128000),
+  isDefault: z.boolean().default(false),
+});
+
+export type CreateConnectionInput = z.infer<typeof createConnectionSchema>;

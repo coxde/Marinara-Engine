@@ -1,0 +1,31 @@
+// ──────────────────────────────────────────────
+// @rpg-engine/shared — Public API
+// ──────────────────────────────────────────────
+
+// Types
+export * from "./types/chat.js";
+export * from "./types/character.js";
+export * from "./types/lorebook.js";
+export * from "./types/prompt.js";
+export * from "./types/connection.js";
+export * from "./types/agent.js";
+export * from "./types/game-state.js";
+export * from "./types/vn.js";
+export * from "./types/persona.js";
+
+// Schemas
+export * from "./schemas/chat.schema.js";
+export * from "./schemas/character.schema.js";
+export * from "./schemas/lorebook.schema.js";
+export * from "./schemas/prompt.schema.js";
+export * from "./schemas/connection.schema.js";
+export * from "./schemas/agent.schema.js";
+
+// Constants
+export * from "./constants/providers.js";
+export * from "./constants/defaults.js";
+export * from "./constants/chat-modes.js";
+
+// Utils
+export * from "./utils/macro-engine.js";
+export * from "./utils/xml-wrapper.js";
