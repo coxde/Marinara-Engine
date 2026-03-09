@@ -91,6 +91,14 @@ export function useGenerate() {
       const MAX_CHARS = 8; // Maximum characters per frame
       const RAMP_THRESHOLD = 120; // Start ramping up speed at this queue length
 
+      const flushTypewriterBuffer = () => {
+        cancelAnimationFrame(rafId);
+        fullBuffer += pendingText;
+        pendingText = "";
+        typingActive = false;
+        if (fullBuffer) setStreamBuffer(fullBuffer);
+      };
+
       const startTypewriter = () => {
         if (typingActive) return;
         typingActive = true;
@@ -320,8 +328,9 @@ export function useGenerate() {
             }
 
             case "error": {
-              const errorMsg = (event.data as string) || "Generation failed";
-              toast.error(errorMsg);
+              // Flush pending text so the user sees what arrived before the error
+              flushTypewriterBuffer();
+              toast.error((event.data as string) || "Generation failed");
               break;
             }
 
@@ -352,11 +361,7 @@ export function useGenerate() {
         setStreamBuffer(fullBuffer + pendingText);
       } catch (error) {
         // Flush everything instantly on error so user sees what arrived
-        cancelAnimationFrame(rafId);
-        fullBuffer += pendingText;
-        pendingText = "";
-        typingActive = false;
-        if (fullBuffer) setStreamBuffer(fullBuffer);
+        flushTypewriterBuffer();
         // Abort is intentional — don't log or rethrow
         if (error instanceof DOMException && error.name === "AbortError") return;
         console.error("Generation error:", error);
@@ -404,6 +409,7 @@ export function useGenerate() {
       clearFailedAgentTypes();
 
       try {
+        let hasError = false;
         for await (const event of api.streamEvents("/retry-agents", { chatId, agentTypes })) {
           switch (event.type) {
             case "agent_result": {
@@ -457,6 +463,7 @@ export function useGenerate() {
               break;
             }
             case "error": {
+              hasError = true;
               toast.error((event.data as string) || "Agent retry failed");
               break;
             }
@@ -465,7 +472,7 @@ export function useGenerate() {
             }
           }
         }
-        toast.success("Agent retry completed");
+        if (!hasError) toast.success("Agent retry completed");
       } catch (error) {
         if (error instanceof DOMException && error.name === "AbortError") return;
         const msg = error instanceof Error ? error.message : "Agent retry failed";

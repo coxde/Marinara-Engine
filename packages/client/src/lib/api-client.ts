@@ -162,13 +162,10 @@ export const api = {
           if (data === "[DONE]") return;
           try {
             const parsed = JSON.parse(data);
-            if (parsed.type === "error") {
-              throw new ApiError(500, parsed.data ?? "Generation error");
-            }
             yield parsed;
+            if (parsed.type === "error") return; // error is a terminal event — stop iteration
           } catch (e) {
-            if (e instanceof ApiError) throw e;
-            // Non-JSON — yield as raw token
+            // JSON parse failed — yield raw data as a token
             yield { type: "token", data };
           }
         }
