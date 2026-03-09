@@ -625,10 +625,34 @@ function SectionsTab({
     setDropIdx(calcDropIdx(cardIdx, e));
   };
 
+  const containerRef = useRef<HTMLDivElement>(null);
+
   const handleContainerDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
-    // If dragging below all items, set drop to end
+    // Only snap to end-of-list when the cursor is below all cards.
+    // Card-level onDragOver calls stopPropagation, so this only fires
+    // when the cursor is in container padding/gaps outside any card.
+    // Double-check: if there are cards, only set end-of-list when cursor
+    // is below the last card's bottom edge.
+    if (containerRef.current && sections.length > 0) {
+      const lastCard = containerRef.current.lastElementChild as HTMLElement | null;
+      if (lastCard) {
+        const lastRect = lastCard.getBoundingClientRect();
+        if (e.clientY > lastRect.bottom) {
+          setDropIdx(sections.length);
+        }
+        // If cursor is above the first card, set to 0
+        const firstCard = containerRef.current.firstElementChild as HTMLElement | null;
+        if (firstCard) {
+          const firstRect = firstCard.getBoundingClientRect();
+          if (e.clientY < firstRect.top) {
+            setDropIdx(0);
+          }
+        }
+        return;
+      }
+    }
     setDropIdx(sections.length);
   };
 
@@ -802,7 +826,7 @@ function SectionsTab({
       )}
 
       {/* ── Section list with drag & drop ── */}
-      <div className="space-y-1" onDragOver={handleContainerDragOver} onDrop={commitDrop}>
+      <div ref={containerRef} className="space-y-1" onDragOver={handleContainerDragOver} onDrop={commitDrop}>
         {sections.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-10 text-center">
             <Layers size={24} className="text-[var(--muted-foreground)]" />

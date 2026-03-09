@@ -95,10 +95,18 @@ export async function importSTPreset(raw: Record<string, unknown>, db: DB, fileN
   const prompts = preset.prompts ?? [];
   let sectionsCreated = 0;
 
-  // Detect XML wrapper bracket pairs and create groups for them
-  const groupIdMap = await detectAndCreateGroups(prompts, created.id, storage);
+  // Sort prompts by prompt_order so sections are created in the correct display order.
+  // Prompts not listed in prompt_order are appended at the end.
+  const sortedPrompts = [...prompts].sort((a, b) => {
+    const idxA = orderMap.get(a.identifier)?.index ?? Number.MAX_SAFE_INTEGER;
+    const idxB = orderMap.get(b.identifier)?.index ?? Number.MAX_SAFE_INTEGER;
+    return idxA - idxB;
+  });
 
-  for (const entry of prompts) {
+  // Detect XML wrapper bracket pairs and create groups for them
+  const groupIdMap = await detectAndCreateGroups(sortedPrompts, created.id, storage);
+
+  for (const entry of sortedPrompts) {
     // Skip bracket entries that are just XML open/close tags (now handled by groups)
     const isBracket = /^[┌└┎┖⌈⌊⌜⌞]/.test(entry.name);
     if (isBracket && !entry.content?.trim()) continue;
