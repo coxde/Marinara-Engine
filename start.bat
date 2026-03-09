@@ -1,4 +1,5 @@
 @echo off
+setlocal enabledelayedexpansion
 title Marinara Engine
 color 0A
 echo.
@@ -20,11 +21,11 @@ if %errorlevel% neq 0 (
 :: Auto-update from Git
 if exist ".git" (
     echo  [..] Checking for updates...
-    for /f "tokens=*" %%i in ('git rev-parse HEAD 2^>nul') do set OLD_HEAD=%%i
+    for /f "tokens=*" %%i in ('git rev-parse HEAD 2^>nul') do set "OLD_HEAD=%%i"
     git pull >nul 2>&1
-    if %errorlevel% equ 0 (
-        for /f "tokens=*" %%i in ('git rev-parse HEAD 2^>nul') do set NEW_HEAD=%%i
-        if not "%OLD_HEAD%"=="%NEW_HEAD%" (
+    if !errorlevel! equ 0 (
+        for /f "tokens=*" %%i in ('git rev-parse HEAD 2^>nul') do set "NEW_HEAD=%%i"
+        if not "!OLD_HEAD!"=="!NEW_HEAD!" (
             echo  [OK] Updated to latest version
             echo  [..] Reinstalling dependencies...
             call pnpm install

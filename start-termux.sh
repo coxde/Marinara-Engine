@@ -13,6 +13,14 @@ echo ""
 # Navigate to script directory
 cd "$(dirname "$0")"
 
+# ── Ensure required Termux packages ──
+for pkg_name in git python make; do
+    if ! command -v "$pkg_name" &> /dev/null; then
+        echo "  [..] Installing $pkg_name..."
+        pkg install -y "$pkg_name" 2>/dev/null || true
+    fi
+done
+
 # ── Auto-update from Git ──
 if [ -d ".git" ]; then
     echo "  [..] Checking for updates..."
@@ -53,18 +61,6 @@ if ! command -v pnpm &> /dev/null; then
 fi
 echo "  [OK] pnpm found"
 
-# ── Check git (needed for some npm deps) ──
-if ! command -v git &> /dev/null; then
-    echo "  [..] git not found — installing via pkg..."
-    pkg install -y git
-fi
-
-# ── Check python (needed for node-gyp native builds) ──
-if ! command -v python3 &> /dev/null; then
-    echo "  [..] python3 not found — installing via pkg..."
-    pkg install -y python
-fi
-
 # ── Install dependencies ──
 if [ ! -d "node_modules" ]; then
     echo ""
@@ -93,7 +89,7 @@ echo "  [..] Syncing database schema..."
 pnpm db:push 2>/dev/null || true
 
 # ── Detect IP address for LAN access ──
-LOCAL_IP=$(ip -4 addr show wlan0 2>/dev/null | grep -oP '(?<=inet\s)\d+(\.\d+){3}' || echo "")
+LOCAL_IP=$(ip -4 addr show wlan0 2>/dev/null | grep 'inet ' | sed 's/.*inet \([0-9.]*\).*/\1/' || echo "")
 if [ -z "$LOCAL_IP" ]; then
     LOCAL_IP=$(ifconfig 2>/dev/null | grep 'inet ' | grep -v '127.0.0.1' | awk '{print $2}' | head -n 1 || echo "")
 fi
@@ -111,9 +107,16 @@ echo "    Press Ctrl+C to stop"
 echo "  ══════════════════════════════════════════"
 echo ""
 
+# Load .env if present (respects user overrides)
+if [ -f .env ]; then
+  set -a
+  . ./.env
+  set +a
+fi
+
 export NODE_ENV=production
-export PORT=7860
-export HOST=0.0.0.0
+export PORT=${PORT:-7860}
+export HOST=${HOST:-0.0.0.0}
 
 # Open in Termux browser if available (no-op if not)
 if command -v termux-open-url &> /dev/null; then
