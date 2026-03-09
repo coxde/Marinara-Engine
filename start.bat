@@ -89,9 +89,10 @@ call pnpm db:push 2>nul
 
 :: Start the server
 :: Load .env if present (respects user overrides)
+:: eol=# skips comment lines; tokens/delims split on first '='
 if exist .env (
-  for /f "usebackq tokens=1,* delims==" %%A in (".env") do (
-    set "%%A=%%B"
+  for /f "usebackq eol=# tokens=1,* delims==" %%A in (".env") do (
+    if not "%%A"=="" if not "%%B"=="" set "%%A=%%B"
   )
 )
 
@@ -107,8 +108,8 @@ echo    Press Ctrl+C to stop
 echo  ══════════════════════════════════════════
 echo.
 
-:: Open browser after a short delay
-start "" /b cmd /c "timeout /t 3 /nobreak >nul && start http://localhost:%PORT%"
+:: Open browser after a short delay (use explorer.exe as fallback)
+start "" cmd /c "timeout /t 4 /nobreak >nul && start http://localhost:%PORT% || explorer http://localhost:%PORT%"
 
 :: Start server
 cd packages\server

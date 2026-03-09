@@ -36,6 +36,7 @@ import {
   Eye,
   EyeOff,
   Download,
+  FolderOpen,
 } from "lucide-react";
 import { useClearAllData } from "../../hooks/use-chats";
 import { useChatStore } from "../../stores/chat.store";
@@ -280,6 +281,13 @@ function AppearanceSettings() {
             folder to add custom fonts.
           </p>
         )}
+        <button
+          onClick={() => api.post("/api/fonts/open-folder").catch(() => {})}
+          className="mt-1 inline-flex items-center gap-1.5 self-start rounded-lg bg-[var(--secondary)] px-3 py-1.5 text-[11px] font-medium text-[var(--muted-foreground)] ring-1 ring-[var(--border)] transition-all hover:bg-[var(--accent)] hover:text-[var(--foreground)]"
+        >
+          <FolderOpen size={12} />
+          Open Fonts Folder
+        </button>
       </label>
 
       <label className="flex flex-col gap-1">

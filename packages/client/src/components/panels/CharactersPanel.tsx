@@ -30,6 +30,7 @@ import {
   UserMinus,
   ArrowUpDown,
   Pencil,
+  Tag,
 } from "lucide-react";
 import { useUIStore } from "../../stores/ui.store";
 import { cn } from "../../lib/utils";
@@ -61,6 +62,7 @@ export function CharactersPanel() {
   const [editGroupName, setEditGroupName] = useState("");
   // When non-null, clicking a character adds/removes it from this group
   const [assigningToGroup, setAssigningToGroup] = useState<string | null>(null);
+  const [activeTag, setActiveTag] = useState<string | null>(null);
 
   const chatCharacterIds: string[] = activeChat
     ? ((typeof activeChat.characterIds === "string" ? JSON.parse(activeChat.characterIds) : activeChat.characterIds) ??
@@ -89,15 +91,36 @@ export function CharactersPanel() {
   }, [parsedCharacters]);
 
   const filteredCharacters = useMemo(() => {
-    if (!search.trim()) return parsedCharacters;
-    const q = search.toLowerCase();
-    return parsedCharacters.filter(
-      (c) =>
-        (c.parsed.name ?? "").toLowerCase().includes(q) ||
-        (c.parsed.description ?? "").toLowerCase().includes(q) ||
-        (c.parsed.tags ?? []).some((t: string) => t.toLowerCase().includes(q)),
-    );
-  }, [parsedCharacters, search]);
+    let list = parsedCharacters;
+    // Filter by active tag
+    if (activeTag) {
+      list = list.filter((c) =>
+        (c.parsed.tags ?? []).some((t: string) => t === activeTag),
+      );
+    }
+    // Filter by search text
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      list = list.filter(
+        (c) =>
+          (c.parsed.name ?? "").toLowerCase().includes(q) ||
+          (c.parsed.description ?? "").toLowerCase().includes(q) ||
+          (c.parsed.tags ?? []).some((t: string) => t.toLowerCase().includes(q)),
+      );
+    }
+    return list;
+  }, [parsedCharacters, search, activeTag]);
+
+  // Collect all unique tags across characters for the filter bar
+  const allTags = useMemo(() => {
+    const tagSet = new Set<string>();
+    for (const c of parsedCharacters) {
+      for (const t of (c.parsed.tags ?? []) as string[]) {
+        tagSet.add(t);
+      }
+    }
+    return [...tagSet].sort((a, b) => a.localeCompare(b));
+  }, [parsedCharacters]);
 
   const sortedCharacters = useMemo(() => {
     const list = [...filteredCharacters];
@@ -207,6 +230,35 @@ export function CharactersPanel() {
           <ArrowUpDown size={10} className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[var(--muted-foreground)]" />
         </div>
       </div>
+
+      {/* Tag filter bar */}
+      {allTags.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {activeTag && (
+            <button
+              onClick={() => setActiveTag(null)}
+              className="flex items-center gap-1 rounded-full bg-[var(--destructive)]/10 px-2 py-0.5 text-[10px] font-medium text-[var(--destructive)] transition-all hover:bg-[var(--destructive)]/20"
+            >
+              <X size={8} /> Clear
+            </button>
+          )}
+          {allTags.map((tag) => (
+            <button
+              key={tag}
+              onClick={() => setActiveTag(activeTag === tag ? null : tag)}
+              className={cn(
+                "flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium transition-all",
+                activeTag === tag
+                  ? "bg-[var(--primary)]/20 text-[var(--primary)] ring-1 ring-[var(--primary)]/30"
+                  : "bg-[var(--secondary)] text-[var(--muted-foreground)] hover:bg-[var(--accent)] hover:text-[var(--foreground)]",
+              )}
+            >
+              <Tag size={8} />
+              {tag}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Actions */}
       <div className="flex gap-1.5">
@@ -474,6 +526,7 @@ export function CharactersPanel() {
         {sortedCharacters.map((char) => {
           const charName = char.parsed.name ?? "Unnamed";
           const charDesc = char.parsed.description ?? "";
+          const charTags = (char.parsed.tags ?? []) as string[];
           const charNameColor = (char.parsed.extensions?.nameColor as string) || undefined;
           const isSelected = chatCharacterIds.includes(char.id);
           const avatarUrl = char.avatarPath;
@@ -543,6 +596,24 @@ export function CharactersPanel() {
                       : "Click to add to group"
                     : charDesc.slice(0, 60) || "No description"}
                 </div>
+                {!assigningToGroup && charTags.length > 0 && (
+                  <div className="mt-0.5 flex flex-wrap gap-0.5">
+                    {charTags.slice(0, 3).map((tag) => (
+                      <span
+                        key={tag}
+                        onClick={(e) => { e.stopPropagation(); setActiveTag(activeTag === tag ? null : tag); }}
+                        className="cursor-pointer rounded-full bg-[var(--primary)]/8 px-1.5 py-px text-[8px] font-medium text-[var(--primary)]/70 transition-all hover:bg-[var(--primary)]/15 hover:text-[var(--primary)]"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                    {charTags.length > 3 && (
+                      <span className="rounded-full bg-[var(--secondary)] px-1.5 py-px text-[8px] text-[var(--muted-foreground)]">
+                        +{charTags.length - 3}
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Actions (hidden during group assign mode) */}

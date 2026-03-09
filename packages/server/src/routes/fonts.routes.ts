@@ -5,6 +5,8 @@ import type { FastifyInstance } from "fastify";
 import { existsSync, mkdirSync, createReadStream } from "fs";
 import { readdir } from "fs/promises";
 import { join, extname, basename } from "path";
+import { execFile } from "child_process";
+import { platform } from "os";
 
 const FONTS_DIR = join(process.cwd(), "data", "fonts");
 
@@ -96,5 +98,16 @@ export async function fontsRoutes(app: FastifyInstance) {
       .header("Content-Type", MIME_MAP[ext] ?? "application/octet-stream")
       .header("Cache-Control", "public, max-age=31536000, immutable")
       .send(stream);
+  });
+
+  /** Open the data/fonts folder in the native file explorer */
+  app.post("/open-folder", async (_req, reply) => {
+    ensureDir();
+    const os = platform();
+    const cmd = os === "darwin" ? "open" : os === "win32" ? "explorer" : "xdg-open";
+    execFile(cmd, [FONTS_DIR], (err) => {
+      if (err) console.warn("Could not open fonts folder:", err.message);
+    });
+    return reply.send({ ok: true, path: FONTS_DIR });
   });
 }

@@ -498,6 +498,16 @@ export function ConnectionEditor() {
                 Only use URLs from providers you trust. A malicious endpoint could intercept your messages and API keys.
               </span>
             </p>
+            {localProvider === "custom" && (
+              <p className="mt-1.5 flex items-start gap-1 text-[10px] text-sky-400/80">
+                <AlertCircle size={10} className="mt-px shrink-0" />
+                <span>
+                  <strong>Windows users:</strong> If your proxy or local server isn't detected, Windows Defender Firewall
+                  may be blocking the connection. Open <em>Windows Security → Firewall & network protection →
+                  Allow an app through firewall</em> and add Node.js or your proxy application.
+                </span>
+              </p>
+            )}
           </FieldGroup>
 
           {/* ── Model Selection ── */}
