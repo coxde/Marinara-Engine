@@ -4,7 +4,7 @@ title Marinara Engine
 color 0A
 echo.
 echo  +==========================================+
-echo  |       Marinara Engine  -  Launcher        |
+echo  ^|       Marinara Engine  -  Launcher        ^|
 echo  +==========================================+
 echo.
 
