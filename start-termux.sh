@@ -129,6 +129,12 @@ if [ ! -f "$BS3_DIR/build/Release/better_sqlite3.node" ]; then
     # Run node-gyp from the package directory.
     # Do NOT pass --nodedir (it can stall if the path has no usable headers;
     # node-gyp will auto-download the correct headers for this Node version).
+    #
+    # On Termux, Node 22+ reports process.platform === "android" which triggers
+    # the Android NDK code path in binding.gyp (requires android_ndk_path).
+    # Termux has no NDK — it uses its own clang directly — so we force OS=linux
+    # to use the standard Linux build path instead.
+    export GYP_DEFINES="OS=linux"
     (cd "$BS3_DIR" && node-gyp rebuild --release --loglevel=verbose) || {
         echo ""
         echo "  [ERR] Failed to compile better-sqlite3."
