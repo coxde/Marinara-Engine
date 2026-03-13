@@ -35,7 +35,7 @@ import { executeToolCalls } from "../services/tools/tool-executor.js";
 import { createAgentPipeline, type ResolvedAgent } from "../services/agents/agent-pipeline.js";
 import { executeAgent } from "../services/agents/agent-executor.js";
 import { executeKnowledgeRetrieval } from "../services/agents/knowledge-retrieval.js";
-import { extractFileText } from "./knowledge-sources.routes.js";
+import { extractFileText, getSourceFilePath } from "./knowledge-sources.routes.js";
 import { gameStateSnapshots as gameStateSnapshotsTable } from "../db/schema/index.js";
 import { eq } from "drizzle-orm";
 import { PROVIDERS } from "@marinara-engine/shared";
@@ -675,27 +675,17 @@ export async function generateRoutes(app: FastifyInstance) {
         try {
           const sourceFileIds = (knowledgeRetrievalAgent.settings.sourceFileIds as string[]) ?? [];
           if (sourceFileIds.length > 0) {
-            const { join: joinPath } = await import("path");
-            const { readFileSync, existsSync: existsSyncFs } = await import("fs");
-            const sourcesDir = joinPath(process.cwd(), "data", "knowledge-sources");
-            const metaPath = joinPath(sourcesDir, "meta.json");
-            if (existsSyncFs(metaPath)) {
-              const meta: Record<string, { id: string; originalName: string; filename: string }> = JSON.parse(
-                readFileSync(metaPath, "utf-8"),
-              );
-              for (const fileId of sourceFileIds) {
-                const entry = meta[fileId];
-                if (!entry) continue;
-                const filePath = joinPath(sourcesDir, entry.filename);
-                if (!existsSyncFs(filePath)) continue;
-                try {
-                  const text = await extractFileText(filePath);
-                  if (text.trim()) {
-                    materialParts.push(`## File: ${entry.originalName}\n${text}`);
-                  }
-                } catch {
-                  /* skip unreadable files */
+            for (const fileId of sourceFileIds) {
+              try {
+                const sourceInfo = await getSourceFilePath(fileId);
+                if (!sourceInfo) continue;
+                const { filePath, originalName } = sourceInfo;
+                const text = await extractFileText(filePath);
+                if (text.trim()) {
+                  materialParts.push(`## File: ${originalName}\n${text}`);
                 }
+              } catch {
+                /* skip unreadable or missing files */
               }
             }
           }
