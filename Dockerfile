@@ -49,8 +49,8 @@ COPY --from=builder /app/packages/shared/dist packages/shared/dist
 COPY --from=builder /app/packages/server/dist packages/server/dist
 COPY --from=builder /app/packages/client/dist packages/client/dist
 
-# Copy data directories (fonts, default backgrounds)
-COPY data/ data/
+# Ensure /app/data exists for runtime use (fonts, default backgrounds, db, uploads)
+RUN mkdir -p /app/data
 
 # The SQLite database + user uploads live in /app/data at runtime.
 # Mount a volume here for persistence.
