@@ -1099,7 +1099,7 @@ export async function generateRoutes(app: FastifyInstance) {
       const generateForCharacter = async (
         targetCharId: string | null,
         messagesForGen: Array<{ role: "system" | "user" | "assistant"; content: string; images?: string[] }>,
-      ) => {
+      ): Promise<{ savedMsg: Awaited<ReturnType<typeof chats.createMessage>>; response: string } | null> => {
         // Reset per-character accumulators
         fullResponse = "";
         fullThinking = "";
@@ -1244,7 +1244,7 @@ export async function generateRoutes(app: FastifyInstance) {
           for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
             // Treat abort as a silent cancellation: stop the pipeline immediately.
             if (abortController.signal.aborted) {
-              return;
+              return null;
             }
 
             let result;
@@ -1265,14 +1265,14 @@ export async function generateRoutes(app: FastifyInstance) {
             } catch (err: any) {
               // If the error was caused by an abort, cancel silently and skip post-processing.
               if (abortController.signal.aborted || (err && err.name === "AbortError")) {
-                return;
+                return null;
               }
               throw err;
             }
 
             // If abort was triggered during chat completion, exit before using the result.
             if (abortController.signal.aborted) {
-              return;
+              return null;
             }
 
             // If provider doesn't support onToken (fell back to non-streaming),
@@ -1514,6 +1514,7 @@ export async function generateRoutes(app: FastifyInstance) {
           messagesWithInstruction.push({ role: "system", content: charInstruction });
 
           const genResult = await generateForCharacter(charId, messagesWithInstruction);
+          if (!genResult) break; // aborted
           lastSavedMsg = genResult.savedMsg;
           allResponses.push(genResult.response);
 
@@ -1524,7 +1525,9 @@ export async function generateRoutes(app: FastifyInstance) {
         // Single/merged: one generation
         const targetCharId = characterIds[0] ?? null;
         const genResult = await generateForCharacter(targetCharId, finalMessages);
-        lastSavedMsg = genResult.savedMsg;
+        if (genResult) {
+          lastSavedMsg = genResult.savedMsg;
+        }
         allResponses.push(fullResponse);
       }
 
