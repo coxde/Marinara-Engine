@@ -1,7 +1,6 @@
 // ──────────────────────────────────────────────
 // Layout: Right Panel (polished with panel transitions)
 // ──────────────────────────────────────────────
-import { useEffect } from "react";
 import { X, Users, BookOpen, FileText, Link, Sparkles, Settings, UserCircle } from "lucide-react";
 import { useUIStore } from "../../stores/ui.store";
 import { CharactersPanel } from "../panels/CharactersPanel";
@@ -39,9 +38,9 @@ export function RightPanel() {
   const panel = useUIStore((s) => s.rightPanel);
   const close = useUIStore((s) => s.closeRightPanel);
 
-  useEffect(() => {
-    mountedPanels.add(panel);
-  }, [panel]);
+  // Add synchronously so the current panel is in the set for this render.
+  // Module-level Set is not React state, so mutating it during render is safe.
+  mountedPanels.add(panel);
 
   const config = PANEL_CONFIG[panel] ?? { title: "Panel", icon: null, gradient: "from-slate-400 to-slate-500" };
 
