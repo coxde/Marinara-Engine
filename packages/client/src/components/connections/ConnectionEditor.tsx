@@ -894,11 +894,11 @@ export function ConnectionEditor() {
                   className="w-full rounded-xl bg-[var(--secondary)] px-3 py-2.5 text-sm ring-1 ring-[var(--border)] focus:outline-none focus:ring-2 focus:ring-[var(--ring)]"
                 >
                   <option value="">Same as this connection</option>
-                  {(allConnections ?? [])
+                  {((allConnections ?? []) as Record<string, unknown>[])
                     .filter(
-                      (c: Record<string, unknown>) => c.id !== connectionDetailId && c.provider !== "image_generation",
+                      (c) => c.id !== connectionDetailId && c.provider !== "image_generation",
                     )
-                    .map((c: Record<string, unknown>) => (
+                    .map((c) => (
                       <option key={c.id as string} value={c.id as string}>
                         {c.name as string}
                         {c.embeddingModel ? ` (${c.embeddingModel})` : ""}
