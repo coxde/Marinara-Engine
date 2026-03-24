@@ -71,13 +71,13 @@ export function AgentsPanel() {
 
         await createRegexScript.mutateAsync({
           name,
-          enabled: String(enabled),
+          enabled,
           findRegex,
           replaceString: obj.replaceString ?? "",
-          trimStrings: JSON.stringify(obj.trimStrings ?? []),
-          placement: JSON.stringify(placement),
+          trimStrings: obj.trimStrings ?? [],
+          placement,
           flags,
-          promptOnly: String(obj.promptOnly ?? false),
+          promptOnly: obj.promptOnly ?? false,
           order: obj.order ?? 0,
           minDepth: obj.minDepth ?? null,
           maxDepth: obj.maxDepth ?? null,
