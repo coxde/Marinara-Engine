@@ -2298,7 +2298,7 @@ export async function generateRoutes(app: FastifyInstance) {
               frequencyPenalty: frequencyPenalty || undefined,
               presencePenalty: presencePenalty || undefined,
               showThoughts,
-              reasoningEffort: resolvedEffort ?? reasoningEffort,
+              reasoningEffort: resolvedEffort ?? undefined,
               enableCaching: conn.enableCaching === "true",
               enableTools,
               agentCount: resolvedAgents.length,
