@@ -62,31 +62,14 @@
 
 **Bug Fixes:**
 
-- **Depth Range Regex** — Regex scripts with `minDepth` / `maxDepth` now work correctly. Depth filtering was defined in types and UI but never implemented in the client or server processing loops.
-- **HTML Spacing on Mobile** — Fixed extra vertical gaps appearing in HTML content on Android/mobile. Formatting newlines between HTML block tags were being converted to `<br>` elements with margins; they are now stripped.
+- **Depth Range Regex** — Regex scripts with `minDepth` / `maxDepth` now work correctly. Depth filtering was defined in types and UI, but never implemented in the client or server processing loops.
+- **HTML Spacing on Mobile** — Fixed extra vertical gaps appearing in HTML content on Android/mobile. Formatting newlines between HTML block tags was being converted to `<br>` elements with margins; they are now stripped.
+- **Peek Prompt Bugs** - The prompt is now properly displayed.
 
 **Security:**
 
 - **Translation URL Validation** — DeepLX URL input is validated as a proper HTTP/HTTPS URL to prevent SSRF.
-- **Google Translate Length Guard** — Added a 5,000 character limit for the Google Translate provider to prevent silent failures from URL length limits.
-
----
-
-### v1.4.2
-
-**Added:**
-
-- **Lorebook Support for Conversations** — Lorebooks now work in Conversation mode. Attach lorebooks via Chat Settings, and triggered entries are injected into the prompt wrapped in `<lore>` tags. Supports keyword, regex, and semantic matching.
-- **Persona Comment Field** — Personas can now have a comment subtitle for disambiguation (e.g., "Modern AU version"). Shown in the Personas panel, the persona editor, and the chat persona picker. Search in the picker also matches comments.
-- **Smart Typographic Quotes** — AI responses now auto-convert straight quotes to curly typographic quotes: `"` → \u201C\u201D, paired `'` → \u2018\u2019, and remaining `'` → \u2019 (apostrophes).
-- **Mobile Access Documentation** — Added "Accessing from Mobile" section to README with IP discovery instructions for all platforms and a Tailscale tip.
-
-**Bug Fixes:**
-
-- **Backup DATABASE_URL** — The backup endpoint now respects the `DATABASE_URL` environment variable instead of using a hardcoded path.
-- **Mobile Action Icons** — Trash and action icons on cards in Characters, Personas, Lorebooks, Connections, and Presets panels are now always visible on mobile.
-- **Embeddings Double /v1/** — Fixed OpenRouter embeddings returning 404 due to double `/v1/v1/embeddings` in the URL.
-- **SSRF Check Removal** — Removed overly aggressive SSRF private-IP validation that blocked legitimate local and LAN connections in this local-first app.
+- **Google Translate Length Guard** — Added a 5,000-character limit for the Google Translate provider to prevent silent failures from URL length limits.
 
 ---
 
