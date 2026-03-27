@@ -473,19 +473,23 @@ export function useGenerate() {
               // Handle both old (messages array) and new (object with messages + parameters) formats
               const messages = Array.isArray(payload) ? payload : payload.messages;
               const params = Array.isArray(payload) ? null : payload.parameters;
-              console.groupCollapsed(
-                "%c[Debug] Prompt sent to model" + (params ? ` — ${params.model} (${params.provider})` : ""),
+              const msgArr = Array.isArray(messages) ? messages : [];
+              console.group(
+                "%c[Debug] Prompt sent to model (%d messages)" +
+                  (params ? ` — ${params.model} (${params.provider})` : ""),
                 "color: #f59e0b; font-weight: bold",
+                msgArr.length,
               );
               if (params) {
                 console.log("%cParameters", "color: #60a5fa; font-weight: bold", params);
               }
-              console.log(
-                "%cMessages (%d)",
-                "color: #60a5fa; font-weight: bold",
-                Array.isArray(messages) ? messages.length : "?",
-                messages,
-              );
+              for (let i = 0; i < msgArr.length; i++) {
+                const m = msgArr[i] as { role?: string; content?: string };
+                const role = (m.role ?? "unknown").toUpperCase();
+                const color =
+                  role === "SYSTEM" ? "#a78bfa" : role === "USER" ? "#60a5fa" : role === "ASSISTANT" ? "#34d399" : "#f59e0b";
+                console.log(`%c[${i + 1}/${msgArr.length}] ${role}`, `color: ${color}; font-weight: bold`, m.content ?? m);
+              }
               console.groupEnd();
               break;
             }
