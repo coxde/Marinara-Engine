@@ -616,7 +616,11 @@ export async function chatsRoutes(app: FastifyInstance) {
               if (charDesc) parts.push(wrapContent(charDesc, "description", wrapFormat, 2));
               if (charData.personality) parts.push(wrapContent(charData.personality, "personality", wrapFormat, 2));
               if (charData.scenario) parts.push(wrapContent(charData.scenario, "scenario", wrapFormat, 2));
+              if (charData.extensions?.backstory) parts.push(wrapContent(charData.extensions.backstory, "backstory", wrapFormat, 2));
+              if (charData.extensions?.appearance) parts.push(wrapContent(charData.extensions.appearance, "appearance", wrapFormat, 2));
               if (charData.system_prompt) parts.push(wrapContent(charData.system_prompt, "system_prompt", wrapFormat, 2));
+              if (charData.mes_example) parts.push(wrapContent(charData.mes_example, "example_dialogue", wrapFormat, 2));
+              if (charData.post_history_instructions) parts.push(wrapContent(charData.post_history_instructions, "post_history_instructions", wrapFormat, 2));
               if (parts.length > 0) {
                 const block = wrapContent(parts.join("\n"), charName, wrapFormat, 1);
                 const firstSysIdx = assembled.messages.findIndex((m) => m.role === "system");

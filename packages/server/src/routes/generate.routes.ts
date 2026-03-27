@@ -1378,6 +1378,11 @@ export async function generateRoutes(app: FastifyInstance) {
         personality: string;
         scenario: string;
         systemPrompt: string;
+        backstory: string;
+        appearance: string;
+        mesExample: string;
+        firstMes: string;
+        postHistoryInstructions: string;
       }> = [];
       for (const cid of characterIds) {
         const charRow = await chars.getById(cid);
@@ -1395,6 +1400,11 @@ export async function generateRoutes(app: FastifyInstance) {
             personality: charData.personality ?? "",
             scenario,
             systemPrompt: charData.system_prompt ?? "",
+            backstory: charData.extensions?.backstory ?? "",
+            appearance: charData.extensions?.appearance ?? "",
+            mesExample: charData.mes_example ?? "",
+            firstMes: charData.first_mes ?? "",
+            postHistoryInstructions: charData.post_history_instructions ?? "",
           });
         }
       }
@@ -1415,7 +1425,11 @@ export async function generateRoutes(app: FastifyInstance) {
               description: ci.description,
               personality: ci.personality,
               scenario: ci.scenario,
+              backstory: ci.backstory,
+              appearance: ci.appearance,
               system_prompt: ci.systemPrompt,
+              example_dialogue: ci.mesExample,
+              post_history_instructions: ci.postHistoryInstructions,
             },
             wrapFormat,
           );
