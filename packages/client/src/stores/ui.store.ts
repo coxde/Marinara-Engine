@@ -37,6 +37,8 @@ export interface InstalledExtension {
   description: string;
   /** CSS to inject */
   css?: string;
+  /** JavaScript to execute */
+  js?: string;
   /** Whether the extension is enabled */
   enabled: boolean;
   installedAt: string;

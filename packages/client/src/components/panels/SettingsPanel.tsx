@@ -1329,10 +1329,23 @@ function ExtensionsSettings() {
           name: parsed.name ?? file.name.replace(/\.json$/, ""),
           description: parsed.description ?? "",
           css: parsed.css ?? undefined,
+          js: parsed.js ?? undefined,
           enabled: true,
           installedAt: new Date().toISOString(),
         };
         addExtension(ext);
+        toast.success(`Extension "${ext.name}" installed`);
+      } else if (file.name.endsWith(".js")) {
+        const ext: InstalledExtension = {
+          id: generateClientId(),
+          name: file.name.replace(/\.js$/, ""),
+          description: "JS extension imported from file",
+          js: text,
+          enabled: true,
+          installedAt: new Date().toISOString(),
+        };
+        addExtension(ext);
+        toast.success(`Extension "${ext.name}" installed`);
       } else if (file.name.endsWith(".css")) {
         const ext: InstalledExtension = {
           id: generateClientId(),
@@ -1364,9 +1377,9 @@ function ExtensionsSettings() {
         onClick={() => fileRef.current?.click()}
         className="flex items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-[var(--border)] p-3 text-xs text-[var(--muted-foreground)] transition-all hover:border-[var(--primary)]/40 hover:bg-[var(--secondary)]/50"
       >
-        <Download size="0.875rem" /> Import Extension (.json or .css)
+        <Download size="0.875rem" /> Import Extension (.json, .css, or .js)
       </button>
-      <input ref={fileRef} type="file" accept=".json,.css" className="hidden" onChange={handleImportExtension} />
+      <input ref={fileRef} type="file" accept=".json,.css,.js" className="hidden" onChange={handleImportExtension} />
 
       {/* Extension list */}
       <div className="flex flex-col gap-1.5">
@@ -1421,7 +1434,7 @@ function ExtensionsSettings() {
       <div className="rounded-lg bg-[var(--secondary)]/50 p-2.5 text-[0.625rem] text-[var(--muted-foreground)] ring-1 ring-[var(--border)]">
         <strong>JSON format:</strong>{" "}
         <code className="rounded bg-[var(--secondary)] px-1">{`{ "name": "...", "description": "...", "css": "..." }`}</code>
-        . Extensions can inject custom CSS to modify the UI.
+        . Extensions can inject custom CSS and/or JavaScript to modify the UI.
       </div>
     </div>
   );
