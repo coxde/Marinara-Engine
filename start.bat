@@ -18,6 +18,36 @@ if errorlevel 1 (
     exit /b 1
 )
 
+:: Resolve the repo-pinned pnpm version from package.json
+set "PNPM_VERSION=10.30.3"
+for /f "usebackq delims=" %%i in (`node -p "JSON.parse(require('fs').readFileSync('package.json','utf8')).packageManager?.split('@')[1] || '10.30.3'"`) do set "PNPM_VERSION=%%i"
+
+where corepack >nul 2>&1
+if not errorlevel 1 set "HAS_COREPACK=1"
+
+:: Ensure pnpm is available before any update/install path uses it
+where pnpm >nul 2>&1
+if errorlevel 1 (
+    echo  [..] pnpm not found, installing %PNPM_VERSION%...
+    if defined HAS_COREPACK (
+        corepack enable >nul 2>&1
+        corepack prepare pnpm@%PNPM_VERSION% --activate
+    ) else (
+        call npm install -g pnpm@%PNPM_VERSION%
+    )
+) else (
+    for /f "usebackq delims=" %%i in (`pnpm -v`) do set "CURRENT_PNPM_VERSION=%%i"
+    if /I not "!CURRENT_PNPM_VERSION!"=="%PNPM_VERSION%" (
+        echo  [..] Aligning pnpm to %PNPM_VERSION%...
+        if defined HAS_COREPACK (
+            corepack enable >nul 2>&1
+            corepack prepare pnpm@%PNPM_VERSION% --activate
+        ) else (
+            call npm install -g pnpm@%PNPM_VERSION%
+        )
+    )
+)
+
 :: Auto-update from Git
 if not exist ".git" goto :skip_update
 echo  [..] Checking for updates...
@@ -45,15 +75,7 @@ del /q "packages\client\tsconfig.tsbuildinfo" 2>nul
 :skip_update
 echo  [OK] Node.js found:
 node -v
-
-:: Check for pnpm
-where pnpm >nul 2>&1
-if errorlevel 1 (
-    echo  [..] pnpm not found, installing via corepack...
-    corepack enable
-    corepack prepare pnpm@latest --activate
-)
-echo  [OK] pnpm found
+echo  [OK] pnpm %PNPM_VERSION% ready
 
 :: Install dependencies if needed
 if exist "node_modules" goto :skip_install

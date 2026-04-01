@@ -13,6 +13,39 @@ echo ""
 # Navigate to script directory
 cd "$(dirname "$0")"
 
+# ── Check Node.js ──
+if ! command -v node &> /dev/null; then
+    echo "  [ERROR] Node.js is not installed."
+    echo "  Please install Node.js 20+ from https://nodejs.org"
+    echo "  Or via homebrew:  brew install node"
+    exit 1
+fi
+
+NODE_VERSION=$(node -v | cut -d'.' -f1 | tr -d 'v')
+echo "  [OK] Node.js $(node -v) found"
+
+if [ "$NODE_VERSION" -lt 20 ]; then
+    echo "  [WARN] Node.js 20+ is recommended. You have v${NODE_VERSION}."
+fi
+
+# ── Check pnpm ──
+PNPM_VERSION=$(node -p "JSON.parse(require('fs').readFileSync('package.json','utf8')).packageManager?.split('@')[1] || '10.30.3'")
+
+if command -v corepack &> /dev/null; then
+    corepack enable >/dev/null 2>&1 || true
+fi
+
+CURRENT_PNPM_VERSION=$(pnpm -v 2>/dev/null || true)
+if [ -z "$CURRENT_PNPM_VERSION" ] || [ "$CURRENT_PNPM_VERSION" != "$PNPM_VERSION" ]; then
+    echo "  [..] Aligning pnpm to ${PNPM_VERSION}..."
+    if command -v corepack &> /dev/null; then
+        corepack prepare "pnpm@${PNPM_VERSION}" --activate >/dev/null
+    else
+        npm install -g "pnpm@${PNPM_VERSION}" >/dev/null
+    fi
+fi
+echo "  [OK] pnpm ${PNPM_VERSION} ready"
+
 # ── Auto-update from Git ──
 if [ -d ".git" ]; then
     echo "  [..] Checking for updates..."
@@ -33,28 +66,6 @@ if [ -d ".git" ]; then
         echo "  [WARN] Could not check for updates (no internet?). Continuing with current version."
     fi
 fi
-
-# ── Check Node.js ──
-if ! command -v node &> /dev/null; then
-    echo "  [ERROR] Node.js is not installed."
-    echo "  Please install Node.js 20+ from https://nodejs.org"
-    echo "  Or via homebrew:  brew install node"
-    exit 1
-fi
-
-NODE_VERSION=$(node -v | cut -d'.' -f1 | tr -d 'v')
-echo "  [OK] Node.js $(node -v) found"
-
-if [ "$NODE_VERSION" -lt 20 ]; then
-    echo "  [WARN] Node.js 20+ is recommended. You have v${NODE_VERSION}."
-fi
-
-# ── Check pnpm ──
-if ! command -v pnpm &> /dev/null; then
-    echo "  [..] pnpm not found, installing via corepack..."
-    corepack enable 2>/dev/null || npm install -g pnpm
-fi
-echo "  [OK] pnpm found"
 
 # ── Install dependencies ──
 if [ ! -d "node_modules" ]; then

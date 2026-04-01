@@ -134,10 +134,10 @@ chmod +x start.sh
 Install [Termux](https://f-droid.org/en/packages/com.termux/) from F-Droid (the Play Store version is outdated), then run:
 
 ```bash
-pkg update && pkg install -y git nodejs-lts && npm install -g pnpm && git clone https://github.com/SpicyMarinara/marinara-engine.git && cd marinara-engine && chmod +x start-termux.sh && ./start-termux.sh
+pkg update && pkg install -y git nodejs-lts && git clone https://github.com/SpicyMarinara/marinara-engine.git && cd marinara-engine && chmod +x start-termux.sh && ./start-termux.sh
 ```
 
-The Termux launcher downloads the prebuilt SQLite native module when available, installs dependencies, builds the app, and starts the server at `http://localhost:7860`. First run takes a few minutes on mobile. After that, run `./start-termux.sh` to start again.
+The Termux launcher downloads the prebuilt SQLite native module when available, installs dependencies, builds the app, and starts the server at `http://localhost:<PORT>` using the resolved `PORT` value from `.env` or the default `7860`. First run takes a few minutes on mobile. After that, run `./start-termux.sh` to start again.
 
 If you also want a dedicated Android app shell, see [android/README.md](android/README.md). The APK is a WebView wrapper around the Termux-served app; it does not replace the server.
 
@@ -146,11 +146,11 @@ If you also want a dedicated Android app shell, see [android/README.md](android/
 When started from a git checkout, the shell launchers will:
 
 1. **Auto-update** from Git if a `.git` folder is detected
-2. Check that Node.js and pnpm are installed
+2. Check that Node.js and the repo-pinned pnpm version are installed
 3. Install all dependencies on first run
 4. Build the application
 5. Ensure the database schema is up to date
-6. Start the server and open `http://localhost:7860` in your browser by default
+6. Load `.env`, resolve the final local URL, start the server, and open `http://localhost:<PORT>` in your browser by default
 
 Set `AUTO_OPEN_BROWSER=false` in `.env` to skip the automatic browser launch. This applies to the shell launchers (`start.bat`, `start.sh`, and `start-termux.sh`) only. The Android wrapper uses its own WebView.
 
@@ -166,6 +166,8 @@ pnpm start
 ```
 
 Then open **<http://localhost:7860>**. Everything runs locally.
+
+Bare `pnpm start` binds to `127.0.0.1` by default. If you want LAN access without using a launcher, set `HOST=0.0.0.0` first.
 
 ### Updating
 
@@ -206,6 +208,8 @@ Then restart the server.
 
 If you're running Marinara Engine on your computer and want to use it from your phone or tablet on the same network:
 
+If you started the app with bare `pnpm start`, set `HOST=0.0.0.0` first or use one of the shell launchers, which already default to that host.
+
 1. **Find your computer's local IP address:**
    - **Windows:** Run `ipconfig` and look for `IPv4 Address`
    - **macOS:** Check System Settings → Wi-Fi → your network, or run `ipconfig getifaddr en0`
@@ -228,6 +232,9 @@ If you're running Marinara Engine on your computer and want to use it from your 
 ```bash
 # Start both server + client with hot reload
 pnpm dev
+
+# Canonical local validation (lint + build)
+pnpm check
 
 # Server only (port 7860)
 pnpm dev:server
@@ -332,16 +339,17 @@ Copy `.env.example` to `.env` to customize:
 
 | Variable | Default | Description |
 | --- | --- | --- |
-| `PORT` | `7860` | Server port |
-| `HOST` | `0.0.0.0` | Bind address |
+| `PORT` | `7860` | Server port. Keep Android builds, launchers, Docker, and Termux on the same value. |
+| `HOST` | `127.0.0.1` (`pnpm start`) / `0.0.0.0` (shell launchers) | Bind address |
 | `AUTO_OPEN_BROWSER` | `true` | Whether the shell launchers auto-open the local app URL. Set to `false`, `0`, `no`, or `off` to disable. Does not apply to the Android WebView wrapper. |
-| `DATABASE_URL` | `file:./data/marinara-engine.db` | SQLite database path |
+| `DATABASE_URL` | `file:./data/marinara-engine.db` | SQLite database path. Relative file paths resolve from the repo root. |
 | `ENCRYPTION_KEY` | _(empty)_ | AES key for API key encryption (generate with `openssl rand -hex 32`) |
 | `LOG_LEVEL` | `info` | Logging verbosity |
-| `CORS_ORIGINS` | `http://localhost:5173` | Allowed CORS origins |
+| `CORS_ORIGINS` | `http://localhost:5173,http://127.0.0.1:5173` | Allowed CORS origins. Set `*` for allow-all without credentials; explicit origin lists keep credentialed CORS support. |
 | `SSL_CERT` | _(empty)_ | Path to the TLS certificate. Set both `SSL_CERT` and `SSL_KEY` to enable HTTPS. |
 | `SSL_KEY` | _(empty)_ | Path to the TLS private key |
 | `IP_ALLOWLIST` | _(empty)_ | Comma-separated IPs or CIDRs to allow. Loopback is always allowed. |
+| `GIPHY_API_KEY` | _(empty)_ | Optional Giphy API key. GIF search is unavailable when unset. |
 
 ---
 
@@ -384,7 +392,7 @@ If you see an error like `EPERM: operation not permitted, open 'C:\Program Files
 
 1. **Run as Administrator** — Right-click your terminal (CMD or PowerShell), select "Run as administrator", then run `start.bat` again.
 2. **Install pnpm manually** — Run `npm install -g pnpm`, then run `start.bat` again.
-3. **Update corepack** — Run `npm install -g corepack`, `corepack enable`, and `corepack prepare pnpm@latest --activate` in an Administrator terminal.
+3. **Update corepack** — Run `npm install -g corepack`, `corepack enable`, and `corepack prepare pnpm@10.30.3 --activate` in an Administrator terminal.
 
 ---
 

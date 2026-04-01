@@ -2,6 +2,8 @@ plugins {
     id 'com.android.application'
 }
 
+def marinaraPort = (project.findProperty("marinaraPort") ?: "7860").toString()
+
 android {
     namespace 'com.marinara.engine'
     compileSdk 34
@@ -12,6 +14,7 @@ android {
         targetSdk 34
         versionCode 2
         versionName "1.4.6"
+        buildConfigField "String", "MARINARA_SERVER_URL", "\"http://localhost:${marinaraPort}\""
     }
 
     buildTypes {

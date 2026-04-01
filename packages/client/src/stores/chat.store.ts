@@ -6,7 +6,6 @@ import { subscribeWithSelector } from "zustand/middleware";
 import type { Chat, Message } from "@marinara-engine/shared";
 import { useAgentStore } from "./agent.store";
 import { useGameStateStore } from "./game-state.store";
-import { useUIStore } from "./ui.store";
 
 const STORAGE_KEY = "marinara-active-chat-id";
 const DRAFTS_KEY = "marinara-input-drafts";

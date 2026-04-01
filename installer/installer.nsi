@@ -112,7 +112,7 @@ Section "Install" SecInstall
 
   ; ── Install pnpm ──
   DetailPrint "Setting up pnpm..."
-  nsExec::ExecToLog 'cmd /c npm install -g pnpm'
+  nsExec::ExecToLog 'cmd /c npm install -g pnpm@10.30.3'
   Pop $0
   DetailPrint "pnpm installed."
 

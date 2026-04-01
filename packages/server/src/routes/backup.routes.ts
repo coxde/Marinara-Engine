@@ -2,7 +2,6 @@
 // Routes: Backup
 // ──────────────────────────────────────────────
 import type { FastifyInstance } from "fastify";
-import { DATA_DIR } from "../utils/data-dir.js";
 import { basename, join } from "path";
 import { existsSync, readdirSync, statSync } from "fs";
 import { cp, mkdir, copyFile, readFile } from "fs/promises";
@@ -11,33 +10,31 @@ import { createLorebooksStorage } from "../services/storage/lorebooks.storage.js
 import { createPromptsStorage } from "../services/storage/prompts.storage.js";
 import { createAgentsStorage } from "../services/storage/agents.storage.js";
 import type { ExportEnvelope } from "@marinara-engine/shared";
+import { getDataDir } from "../utils/data-dir.js";
+import { getDatabaseFilePath } from "../config/runtime-config.js";
 
 /** Directories inside DATA_DIR that should be included in every backup. */
 const BACKUP_DIRS = ["avatars", "sprites", "backgrounds", "gallery", "fonts", "knowledge-sources"];
 
-/** The primary database filename. */
-const DB_FILENAME = "marinara-engine.db";
-
-/** Resolve the actual database file path, respecting DATABASE_URL. */
-const DB_PATH = (process.env.DATABASE_URL ?? `file:${join(DATA_DIR, DB_FILENAME)}`).replace(/^file:/, "");
-
 export async function backupRoutes(app: FastifyInstance) {
   // Create a full backup folder
   app.post("/", async (_req, reply) => {
+    const dataDir = getDataDir();
+    const dbPath = getDatabaseFilePath();
     const timestamp = new Date().toISOString().replace(/[:.]/g, "-").replace("T", "_").slice(0, 19);
     const backupName = `marinara-backup-${timestamp}`;
-    const backupsRoot = join(DATA_DIR, "backups");
+    const backupsRoot = join(dataDir, "backups");
     const backupDir = join(backupsRoot, backupName);
 
     await mkdir(backupDir, { recursive: true });
 
     // 1. Copy the database file (respects DATABASE_URL)
-    const dbName = basename(DB_PATH);
-    if (existsSync(DB_PATH)) {
-      await copyFile(DB_PATH, join(backupDir, dbName));
+    if (dbPath && existsSync(dbPath)) {
+      const dbName = basename(dbPath);
+      await copyFile(dbPath, join(backupDir, dbName));
       // Also copy WAL/SHM if they exist (for a complete backup)
       for (const ext of ["-wal", "-shm"]) {
-        const walSrc = DB_PATH + ext;
+        const walSrc = dbPath + ext;
         if (existsSync(walSrc)) {
           await copyFile(walSrc, join(backupDir, dbName + ext));
         }
@@ -46,7 +43,7 @@ export async function backupRoutes(app: FastifyInstance) {
 
     // 2. Copy data directories
     for (const dirName of BACKUP_DIRS) {
-      const src = join(DATA_DIR, dirName);
+      const src = join(dataDir, dirName);
       if (existsSync(src)) {
         await cp(src, join(backupDir, dirName), { recursive: true });
       }
@@ -60,7 +57,7 @@ export async function backupRoutes(app: FastifyInstance) {
 
   // List existing backups
   app.get("/", async () => {
-    const backupsRoot = join(DATA_DIR, "backups");
+    const backupsRoot = join(getDataDir(), "backups");
     if (!existsSync(backupsRoot)) return [];
 
     return readdirSync(backupsRoot)
@@ -83,7 +80,7 @@ export async function backupRoutes(app: FastifyInstance) {
     if (!/^marinara-backup-[\w-]+$/.test(name)) {
       return reply.status(400).send({ error: "Invalid backup name" });
     }
-    const backupsRoot = join(DATA_DIR, "backups");
+    const backupsRoot = join(getDataDir(), "backups");
     const backupDir = join(backupsRoot, name);
 
     if (!existsSync(backupDir)) {
@@ -111,9 +108,10 @@ export async function backupRoutes(app: FastifyInstance) {
     const allChars = await chars.list();
     const characterExports = await Promise.all(
       allChars.map(async (c: any) => {
+        const dataDir = getDataDir();
         let avatarBase64: string | null = null;
-        if (c.avatarPath && existsSync(join(DATA_DIR, c.avatarPath))) {
-          const buf = await readFile(join(DATA_DIR, c.avatarPath));
+        if (c.avatarPath && existsSync(join(dataDir, c.avatarPath))) {
+          const buf = await readFile(join(dataDir, c.avatarPath));
           avatarBase64 = buf.toString("base64");
         }
         return { ...c, avatarBase64 };
@@ -124,9 +122,10 @@ export async function backupRoutes(app: FastifyInstance) {
     const allPersonaRows = await chars.listPersonas();
     const allPersonas = await Promise.all(
       (allPersonaRows as any[]).map(async (p: any) => {
+        const dataDir = getDataDir();
         let avatarBase64: string | null = null;
-        if (p.avatarPath && existsSync(join(DATA_DIR, p.avatarPath))) {
-          const buf = await readFile(join(DATA_DIR, p.avatarPath));
+        if (p.avatarPath && existsSync(join(dataDir, p.avatarPath))) {
+          const buf = await readFile(join(dataDir, p.avatarPath));
           avatarBase64 = buf.toString("base64");
         }
         return { ...p, avatarBase64 };
@@ -199,10 +198,11 @@ export async function backupRoutes(app: FastifyInstance) {
           const result = await chars.create(charData, c.avatarPath ?? undefined);
           // Restore avatar from base64 if provided
           if (c.avatarBase64 && result?.avatarPath) {
-            const avatarDir = join(DATA_DIR, "avatars");
+            const dataDir = getDataDir();
+            const avatarDir = join(dataDir, "avatars");
             await mkdir(avatarDir, { recursive: true });
             const { writeFile } = await import("fs/promises");
-            await writeFile(join(DATA_DIR, result.avatarPath), Buffer.from(c.avatarBase64, "base64"));
+            await writeFile(join(dataDir, result.avatarPath), Buffer.from(c.avatarBase64, "base64"));
           }
           stats.characters++;
         } catch {
@@ -218,13 +218,14 @@ export async function backupRoutes(app: FastifyInstance) {
           // Restore persona avatar from base64 if provided
           let personaAvatarPath: string | undefined;
           if (p.avatarBase64) {
-            const avatarDir = join(DATA_DIR, "avatars");
+            const dataDir = getDataDir();
+            const avatarDir = join(dataDir, "avatars");
             await mkdir(avatarDir, { recursive: true });
             const ext = ".png";
             const avatarName = `persona-${Date.now()}-${Math.random().toString(36).slice(2, 8)}${ext}`;
             personaAvatarPath = `avatars/${avatarName}`;
             const { writeFile } = await import("fs/promises");
-            await writeFile(join(DATA_DIR, personaAvatarPath), Buffer.from(p.avatarBase64, "base64"));
+            await writeFile(join(dataDir, personaAvatarPath), Buffer.from(p.avatarBase64, "base64"));
           }
           await chars.createPersona(p.name, p.description ?? "", personaAvatarPath, {
             comment: p.comment,

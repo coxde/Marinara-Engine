@@ -12,6 +12,7 @@
 // so you can never lock yourself out of local access.
 
 import type { FastifyRequest, FastifyReply } from "fastify";
+import { getIpAllowlist } from "../config/runtime-config.js";
 
 // ── CIDR helpers ──
 
@@ -127,8 +128,7 @@ const LOOPBACK_CIDRS: CIDREntry[] = [parseCIDR("127.0.0.1")!, parseCIDR("::1")!]
 
 // ── Build allowlist on startup ──
 
-function buildAllowlist(): CIDREntry[] | null {
-  const raw = process.env.IP_ALLOWLIST?.trim();
+function buildAllowlist(raw: string | null): CIDREntry[] | null {
   if (!raw) return null; // no restriction
 
   const entries: CIDREntry[] = [];
@@ -147,16 +147,37 @@ function buildAllowlist(): CIDREntry[] | null {
   return entries;
 }
 
-const allowlist = buildAllowlist();
+let cachedAllowlist:
+  | {
+      raw: string | null;
+      entries: CIDREntry[] | null;
+      announced: boolean;
+    }
+  | null = null;
 
-if (allowlist) {
-  const raw = process.env.IP_ALLOWLIST!.trim();
-  console.log(`[ip-allowlist] Restricting access to: ${raw}  (+ loopback always allowed)`);
+function getAllowlist() {
+  const raw = getIpAllowlist();
+  if (!cachedAllowlist || cachedAllowlist.raw !== raw) {
+    cachedAllowlist = {
+      raw,
+      entries: buildAllowlist(raw),
+      announced: false,
+    };
+  }
+
+  if (cachedAllowlist.entries && !cachedAllowlist.announced) {
+    console.log(`[ip-allowlist] Restricting access to: ${cachedAllowlist.raw}  (+ loopback always allowed)`);
+    cachedAllowlist.announced = true;
+  }
+
+  return cachedAllowlist.entries;
 }
 
 // ── Fastify onRequest hook ──
 
 export function ipAllowlistHook(request: FastifyRequest, reply: FastifyReply, done: () => void) {
+  const allowlist = getAllowlist();
+
   // No allowlist configured → allow everything
   if (!allowlist) return done();
 

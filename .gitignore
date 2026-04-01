@@ -42,3 +42,6 @@ packages/server/data/
 
 # Build output
 release/
+
+# Installer artifacts are published on GitHub Releases, not tracked in source
+installer/*.exe

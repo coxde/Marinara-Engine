@@ -8,7 +8,7 @@ Prerequisites:
 
 - Node.js 20+
 - Git
-- pnpm 9+ if you are not using the launchers
+- pnpm via the repo-pinned `packageManager` if you are not using the launchers
 
 Typical local setup:
 
@@ -45,14 +45,14 @@ Copy `.env.example` to `.env` when you need to change ports, HTTPS settings, or 
 Baseline validation:
 
 ```bash
-pnpm -r run lint
+pnpm check
 ```
 
 Useful follow-up checks:
 
 ```bash
-pnpm build
 pnpm db:push
+pnpm version:check
 ```
 
 There is not a meaningful automated repo test suite yet. Do not present `pnpm test` as a reliable gate in docs or PR descriptions. When you change behavior, include the manual verification you performed.
@@ -105,17 +105,22 @@ Release-related behavior already in the repo:
 - Docker publishing is triggered by `v*` tags.
 - The server update check reads the latest GitHub Release tag and compares it to `APP_VERSION`.
 - Git-based installs can apply updates automatically; Docker installs are prompted with the pull command instead.
+- Pull request CI runs `pnpm check` and `pnpm version:check`.
 
 Standard release flow:
 
 1. Bump the canonical version in root `package.json`.
-2. Sync all derived version fields in the files listed above.
+2. Run `pnpm version:sync -- --android-version-code <next-code>` to sync all derived version fields.
 3. Update `CHANGELOG.md`.
 4. Create and push the tag `vX.Y.Z`.
 5. Publish the GitHub Release from the corresponding changelog entry.
 
+Release helpers now in the repo:
+
+- `pnpm version:sync -- --android-version-code <next-code>` updates the derived version files and README release references from the root `package.json` version.
+- `pnpm version:check` fails when those derived files drift out of sync.
+
 ## Immediate Way Forward
 
-- Add a small version-sync script next so release PRs stop relying on manual file-by-file edits.
-- Add a CI drift check after that to catch unsynchronized version files before tagging.
-- Treat both of those as planned follow-up work. They are not in place yet.
+- Add launcher and installer smoke tests so startup parity is exercised automatically, not just by manual verification.
+- Consider a release wrapper script that bumps the root version, prompts for `versionCode`, runs `pnpm version:sync`, and opens the changelog entry for editing.

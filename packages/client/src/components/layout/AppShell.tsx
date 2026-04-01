@@ -2,26 +2,51 @@
 // Layout: Main App Shell (Discord-like three-column)
 // ──────────────────────────────────────────────
 import { ChatSidebar } from "./ChatSidebar";
-import { ChatArea } from "../chat/ChatArea";
-import { CharacterEditor } from "../characters/CharacterEditor";
-import { LorebookEditor } from "../lorebooks/LorebookEditor";
-import { PresetEditor } from "../presets/PresetEditor";
-import { ConnectionEditor } from "../connections/ConnectionEditor";
-import { AgentEditor } from "../agents/AgentEditor";
-import { ToolEditor } from "../agents/ToolEditor";
-import { PersonaEditor } from "../personas/PersonaEditor";
-import { RegexScriptEditor } from "../agents/RegexScriptEditor";
-import { BotBrowserView } from "../bot-browser/BotBrowserView";
-import { RightPanel } from "./RightPanel";
 import { TopBar } from "./TopBar";
-import { OnboardingTutorial } from "../onboarding/OnboardingTutorial";
 import { ChatNotificationBubbles } from "../chat/ChatNotificationBubbles";
 import { useUIStore } from "../../stores/ui.store";
 import { useBackgroundAutonomousPolling } from "../../hooks/use-background-autonomous";
 import { useIdleDetection } from "../../hooks/use-idle-detection";
 import { cn } from "../../lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { lazy, Suspense, useState, useEffect, useRef, useCallback } from "react";
+
+const ChatArea = lazy(() => import("../chat/ChatArea").then((module) => ({ default: module.ChatArea })));
+const CharacterEditor = lazy(() =>
+  import("../characters/CharacterEditor").then((module) => ({ default: module.CharacterEditor })),
+);
+const LorebookEditor = lazy(() =>
+  import("../lorebooks/LorebookEditor").then((module) => ({ default: module.LorebookEditor })),
+);
+const PresetEditor = lazy(() => import("../presets/PresetEditor").then((module) => ({ default: module.PresetEditor })));
+const ConnectionEditor = lazy(() =>
+  import("../connections/ConnectionEditor").then((module) => ({ default: module.ConnectionEditor })),
+);
+const AgentEditor = lazy(() => import("../agents/AgentEditor").then((module) => ({ default: module.AgentEditor })));
+const ToolEditor = lazy(() => import("../agents/ToolEditor").then((module) => ({ default: module.ToolEditor })));
+const PersonaEditor = lazy(() =>
+  import("../personas/PersonaEditor").then((module) => ({ default: module.PersonaEditor })),
+);
+const RegexScriptEditor = lazy(() =>
+  import("../agents/RegexScriptEditor").then((module) => ({ default: module.RegexScriptEditor })),
+);
+const BotBrowserView = lazy(() =>
+  import("../bot-browser/BotBrowserView").then((module) => ({ default: module.BotBrowserView })),
+);
+const RightPanel = lazy(() => import("./RightPanel").then((module) => ({ default: module.RightPanel })));
+const OnboardingTutorial = lazy(() =>
+  import("../onboarding/OnboardingTutorial").then((module) => ({ default: module.OnboardingTutorial })),
+);
+
+function MainPaneFallback() {
+  return (
+    <div className="flex flex-1 items-center justify-center text-sm text-[var(--muted-foreground)]">Loading...</div>
+  );
+}
+
+function SidePanelFallback() {
+  return <div className="flex h-full items-center justify-center text-sm text-[var(--muted-foreground)]">Loading...</div>;
+}
 
 export function AppShell() {
   // Background autonomous polling for inactive conversation chats
@@ -123,6 +148,27 @@ export function AppShell() {
   const personaDetailId = useUIStore((s) => s.personaDetailId);
   const regexDetailId = useUIStore((s) => s.regexDetailId);
   const botBrowserOpen = useUIStore((s) => s.botBrowserOpen);
+  const hasCompletedOnboarding = useUIStore((s) => s.hasCompletedOnboarding);
+
+  const detailView = botBrowserOpen ? (
+    <BotBrowserView />
+  ) : regexDetailId ? (
+    <RegexScriptEditor />
+  ) : personaDetailId ? (
+    <PersonaEditor />
+  ) : toolDetailId ? (
+    <ToolEditor />
+  ) : agentDetailId ? (
+    <AgentEditor />
+  ) : connectionDetailId ? (
+    <ConnectionEditor />
+  ) : presetDetailId ? (
+    <PresetEditor />
+  ) : characterDetailId ? (
+    <CharacterEditor />
+  ) : lorebookDetailId ? (
+    <LorebookEditor />
+  ) : null;
 
   return (
     <div
@@ -172,27 +218,7 @@ export function AppShell() {
         className="@container mari-main flex min-w-0 flex-1 flex-col overflow-hidden"
       >
         <TopBar />
-        {botBrowserOpen ? (
-          <BotBrowserView />
-        ) : regexDetailId ? (
-          <RegexScriptEditor />
-        ) : personaDetailId ? (
-          <PersonaEditor />
-        ) : toolDetailId ? (
-          <ToolEditor />
-        ) : agentDetailId ? (
-          <AgentEditor />
-        ) : connectionDetailId ? (
-          <ConnectionEditor />
-        ) : presetDetailId ? (
-          <PresetEditor />
-        ) : characterDetailId ? (
-          <CharacterEditor />
-        ) : lorebookDetailId ? (
-          <LorebookEditor />
-        ) : (
-          <ChatArea />
-        )}
+        <Suspense fallback={<MainPaneFallback />}>{detailView ?? <ChatArea />}</Suspense>
       </main>
 
       {/* Mobile right panel backdrop */}
@@ -214,7 +240,9 @@ export function AppShell() {
               aria-label="Settings and tools panel"
               className="mari-right-panel !fixed inset-y-0 right-0 z-50 !w-full shadow-2xl overflow-hidden bg-[var(--background)]/80 backdrop-blur-xl pt-[env(safe-area-inset-top)]"
             >
-              <RightPanel />
+              <Suspense fallback={<SidePanelFallback />}>
+                <RightPanel />
+              </Suspense>
             </motion.aside>
           )}
         </AnimatePresence>
@@ -228,9 +256,13 @@ export function AppShell() {
           )}
           style={{ width: rightPanelOpen ? "20rem" : 0 }}
         >
-          <div className="h-full" style={{ width: "20rem" }}>
-            <RightPanel />
-          </div>
+          {rightPanelOpen && (
+            <div className="h-full" style={{ width: "20rem" }}>
+              <Suspense fallback={<SidePanelFallback />}>
+                <RightPanel />
+              </Suspense>
+            </div>
+          )}
         </aside>
       )}
 
@@ -238,7 +270,11 @@ export function AppShell() {
       <ChatNotificationBubbles />
 
       {/* First-time onboarding tutorial */}
-      <OnboardingTutorial />
+      {!hasCompletedOnboarding && (
+        <Suspense fallback={null}>
+          <OnboardingTutorial />
+        </Suspense>
+      )}
     </div>
   );
 }

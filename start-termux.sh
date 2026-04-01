@@ -45,26 +45,6 @@ if [ "$NODE_PLAT" = "android" ]; then
     fi
 fi
 
-# ── Auto-update from Git ──
-if [ -d ".git" ]; then
-    echo "  [..] Checking for updates..."
-    OLD_HEAD=$(git rev-parse HEAD 2>/dev/null)
-    if git pull 2>/dev/null; then
-        NEW_HEAD=$(git rev-parse HEAD 2>/dev/null)
-        if [ "$OLD_HEAD" != "$NEW_HEAD" ]; then
-            echo "  [OK] Updated to $(git log -1 --format='%h %s' 2>/dev/null)"
-            echo "  [..] Reinstalling dependencies..."
-            pnpm install
-            rm -rf packages/shared/dist packages/server/dist packages/client/dist
-            rm -f packages/shared/tsconfig.tsbuildinfo packages/server/tsconfig.tsbuildinfo packages/client/tsconfig.tsbuildinfo
-        else
-            echo "  [OK] Already up to date"
-        fi
-    else
-        echo "  [WARN] Could not check for updates (no internet?). Continuing with current version."
-    fi
-fi
-
 # ── Check Node.js ──
 if ! command -v node &> /dev/null || ! node -v &> /dev/null; then
     echo "  [..] Node.js not found or broken — installing via pkg..."
@@ -91,11 +71,42 @@ if [ "$NODE_VERSION" -lt 20 ]; then
 fi
 
 # ── Check pnpm ──
-if ! command -v pnpm &> /dev/null; then
-    echo "  [..] pnpm not found, installing globally..."
-    npm install -g pnpm
+PNPM_VERSION=$(node -p "JSON.parse(require('fs').readFileSync('package.json','utf8')).packageManager?.split('@')[1] || '10.30.3'")
+
+if command -v corepack &> /dev/null; then
+    corepack enable >/dev/null 2>&1 || true
 fi
-echo "  [OK] pnpm found"
+
+CURRENT_PNPM_VERSION=$(pnpm -v 2>/dev/null || true)
+if [ -z "$CURRENT_PNPM_VERSION" ] || [ "$CURRENT_PNPM_VERSION" != "$PNPM_VERSION" ]; then
+    echo "  [..] Aligning pnpm to ${PNPM_VERSION}..."
+    if command -v corepack &> /dev/null; then
+        corepack prepare "pnpm@${PNPM_VERSION}" --activate >/dev/null
+    else
+        npm install -g "pnpm@${PNPM_VERSION}" >/dev/null
+    fi
+fi
+echo "  [OK] pnpm ${PNPM_VERSION} ready"
+
+# ── Auto-update from Git ──
+if [ -d ".git" ]; then
+    echo "  [..] Checking for updates..."
+    OLD_HEAD=$(git rev-parse HEAD 2>/dev/null)
+    if git pull 2>/dev/null; then
+        NEW_HEAD=$(git rev-parse HEAD 2>/dev/null)
+        if [ "$OLD_HEAD" != "$NEW_HEAD" ]; then
+            echo "  [OK] Updated to $(git log -1 --format='%h %s' 2>/dev/null)"
+            echo "  [..] Reinstalling dependencies..."
+            pnpm install
+            rm -rf packages/shared/dist packages/server/dist packages/client/dist
+            rm -f packages/shared/tsconfig.tsbuildinfo packages/server/tsconfig.tsbuildinfo packages/client/tsconfig.tsbuildinfo
+        else
+            echo "  [OK] Already up to date"
+        fi
+    else
+        echo "  [WARN] Could not check for updates (no internet?). Continuing with current version."
+    fi
+fi
 
 # ── Install dependencies ──
 if [ ! -d "node_modules" ] || [ "$TERMUX_FORCE_INSTALL" = "1" ]; then
@@ -186,25 +197,6 @@ fi
 echo "  [..] Syncing database schema..."
 pnpm db:push 2>/dev/null || true
 
-# ── Detect IP address for LAN access ──
-LOCAL_IP=$(ip -4 addr show wlan0 2>/dev/null | grep 'inet ' | sed 's/.*inet \([0-9.]*\).*/\1/' || echo "")
-if [ -z "$LOCAL_IP" ]; then
-    LOCAL_IP=$(ifconfig 2>/dev/null | grep 'inet ' | grep -v '127.0.0.1' | awk '{print $2}' | head -n 1 || echo "")
-fi
-
-# ── Start ──
-echo ""
-echo "  ══════════════════════════════════════════"
-echo "    Starting Marinara Engine on http://localhost:7860"
-if [ -n "$LOCAL_IP" ]; then
-echo "    LAN access: http://${LOCAL_IP}:7860"
-fi
-echo ""
-echo "    Open the URL above in your mobile browser."
-echo "    Press Ctrl+C to stop"
-echo "  ══════════════════════════════════════════"
-echo ""
-
 # Load .env if present (respects user overrides)
 if [ -f .env ]; then
   set -a
@@ -219,15 +211,40 @@ export HOST=${HOST:-0.0.0.0}
 # DATABASE_DRIVER was set above during SQLite driver detection
 export DATABASE_DRIVER=${DATABASE_DRIVER:-sql.js}
 
+if [ -n "$SSL_CERT" ] && [ -n "$SSL_KEY" ]; then
+  PROTOCOL=https
+else
+  PROTOCOL=http
+fi
+
 AUTO_OPEN_BROWSER_VALUE="${AUTO_OPEN_BROWSER:-true}"
 case "${AUTO_OPEN_BROWSER_VALUE,,}" in
   0|false|no|off) AUTO_OPEN_BROWSER_ENABLED=0 ;;
   *) AUTO_OPEN_BROWSER_ENABLED=1 ;;
 esac
 
+# ── Detect IP address for LAN access ──
+LOCAL_IP=$(ip -4 addr show wlan0 2>/dev/null | grep 'inet ' | sed 's/.*inet \([0-9.]*\).*/\1/' || echo "")
+if [ -z "$LOCAL_IP" ]; then
+    LOCAL_IP=$(ifconfig 2>/dev/null | grep 'inet ' | grep -v '127.0.0.1' | awk '{print $2}' | head -n 1 || echo "")
+fi
+
+# ── Start ──
+echo ""
+echo "  ══════════════════════════════════════════"
+echo "    Starting Marinara Engine on ${PROTOCOL}://localhost:${PORT}"
+if [ -n "$LOCAL_IP" ]; then
+echo "    LAN access: ${PROTOCOL}://${LOCAL_IP}:${PORT}"
+fi
+echo ""
+echo "    Open the URL above in your mobile browser."
+echo "    Press Ctrl+C to stop"
+echo "  ══════════════════════════════════════════"
+echo ""
+
 # Open in Termux browser if available (no-op if not)
 if [ "$AUTO_OPEN_BROWSER_ENABLED" = "1" ] && command -v termux-open-url &> /dev/null; then
-    (sleep 3 && termux-open-url "http://localhost:7860") &
+    (sleep 3 && termux-open-url "${PROTOCOL}://localhost:${PORT}") &
 elif [ "$AUTO_OPEN_BROWSER_ENABLED" != "1" ]; then
     echo "  [OK] Auto-open disabled (AUTO_OPEN_BROWSER=${AUTO_OPEN_BROWSER_VALUE})"
 fi

@@ -96,15 +96,16 @@ echo  [OK] Git installed successfully
 echo  [OK] Git found
 
 :: -- Install pnpm if needed --
+set "PNPM_VERSION=10.30.3"
 where pnpm >nul 2>&1
 if errorlevel 1 goto :install_pnpm
 goto :pnpm_ok
 
 :install_pnpm
-echo  [..] Installing pnpm...
-call npm install -g pnpm
+echo  [..] Installing pnpm %PNPM_VERSION%...
+call npm install -g pnpm@%PNPM_VERSION%
 if errorlevel 1 (
-    set "INSTALL_ERROR=Failed to install pnpm. Please run: npm install -g pnpm"
+    set "INSTALL_ERROR=Failed to install pnpm. Please run: npm install -g pnpm@%PNPM_VERSION%"
     goto :fatal
 )
 
@@ -182,7 +183,8 @@ echo    To start: double-click "Marinara Engine"
 echo    on your Desktop, or run start.bat in:
 echo    %INSTALL_DIR%
 echo.
-echo    The app opens in your browser at:
+echo    The app opens in your browser at the configured local URL.
+echo    Default:
 echo    http://localhost:7860
 echo  ==========================================
 echo.

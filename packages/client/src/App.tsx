@@ -1,11 +1,10 @@
 // ──────────────────────────────────────────────
 // App: Root component with layout
 // ──────────────────────────────────────────────
-import { useEffect } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { APP_VERSION } from "@marinara-engine/shared";
 import { AppShell } from "./components/layout/AppShell";
-import { ModalRenderer } from "./components/layout/ModalRenderer";
 import { CustomThemeInjector } from "./components/layout/CustomThemeInjector";
 import { Toaster } from "sonner";
 import { useUIStore } from "./stores/ui.store";
@@ -13,6 +12,9 @@ import { api } from "./lib/api-client";
 
 const VERSION_RECOVERY_KEY = "marinara:pwa-version-recovery";
 const VERSION_CHECK_INTERVAL_MS = 5 * 60_000;
+const LazyModalRenderer = lazy(() =>
+  import("./components/layout/ModalRenderer").then((module) => ({ default: module.ModalRenderer })),
+);
 
 type HealthResponse = {
   status: string;
@@ -47,6 +49,7 @@ export function App() {
   const fontSize = useUIStore((s) => s.fontSize);
   const visualTheme = useUIStore((s) => s.visualTheme);
   const fontFamily = useUIStore((s) => s.fontFamily);
+  const hasModalOpen = useUIStore((s) => s.modal !== null);
 
   // Apply theme + font size to the document root whenever they change
   useEffect(() => {
@@ -173,7 +176,11 @@ export function App() {
     <>
       <CustomThemeInjector />
       <AppShell />
-      <ModalRenderer />
+      {hasModalOpen && (
+        <Suspense fallback={null}>
+          <LazyModalRenderer />
+        </Suspense>
+      )}
       <Toaster
         position="bottom-right"
         theme={theme}

@@ -5,9 +5,9 @@ This file is a thin maintainer note for contributors using Claude. Canonical wor
 ## Preferred Workflow
 
 - Start with `pnpm install`.
-- Run `pnpm -r run lint` as the baseline validation command.
-- Run `pnpm build` when you touch packaging, release-facing files, or code that crosses package boundaries.
+- Run `pnpm check` as the baseline validation command.
 - Run `pnpm db:push` when server or database changes need schema verification.
+- Run `pnpm version:check` when you touch release metadata, version-bearing files, or README release references.
 
 ## Repo-Specific Cautions
 
@@ -36,6 +36,6 @@ Android-specific rule:
 
 ## Safe Multi-File Updates
 
-- When changing version numbers, update every version-bearing file in one pass.
-- Inspect the diff for version drift before tagging or publishing.
+- When changing version numbers, bump root `package.json` first, then run `pnpm version:sync -- --android-version-code <next-code>`.
+- Run `pnpm version:check` before tagging or publishing.
 - Keep `CONTRIBUTING.md` authoritative. Add Claude-specific notes here only when they are operationally useful and not already covered there.

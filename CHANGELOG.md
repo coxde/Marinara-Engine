@@ -4,7 +4,22 @@ This file is the release-notes source of truth for Marinara Engine. Reuse these 
 
 ## [Unreleased]
 
-- No entries yet.
+### Added
+
+- Added `pnpm check`, version-sync helpers, and PR CI checks for version drift.
+
+### Changed
+
+- Startup config now resolves `.env` before env-sensitive server modules, normalizes repo-root data and SQLite paths, and keeps `/api/*` 404s JSON-only.
+- Shell launchers now align on the resolved `PORT`, honor launcher-level browser auto-open consistently, and pin pnpm to the repo version.
+- Android now uses a build-time WebView server URL constant instead of a hardcoded Java literal, with optional `MARINARA_PORT` support in `android/build-apk.sh`.
+- The client app shell now lazy-loads editors, right-panel surfaces, onboarding, modals, and the main chat surface to reduce initial bundle weight.
+
+### Fixed
+
+- `CORS_ORIGINS=*` now behaves as explicit allow-all without credentials, while explicit origin lists retain credentialed CORS support.
+- GIF search no longer falls back to a shared embedded API key when `GIPHY_API_KEY` is unset.
+- Sidebar tab text metrics were made explicit so descenders like the `y` in `Roleplay` no longer clip.
 
 ## [1.4.6]
 

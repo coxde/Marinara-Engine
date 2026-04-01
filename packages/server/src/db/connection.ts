@@ -3,8 +3,8 @@
 // ──────────────────────────────────────────────
 import * as schema from "./schema/index.js";
 import { mkdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { DATA_DIR } from "../utils/data-dir.js";
+import { dirname } from "node:path";
+import { getDatabaseDriver, getDatabaseFilePath } from "../config/runtime-config.js";
 
 type DrizzleDB = ReturnType<typeof import("drizzle-orm/libsql").drizzle<typeof schema>>;
 
@@ -85,7 +85,7 @@ async function createWithSqlJs(dbPath: string): Promise<DrizzleDB> {
 async function createDB(dbPath: string): Promise<DrizzleDB> {
   mkdirSync(dirname(dbPath), { recursive: true });
 
-  const driver = process.env.DATABASE_DRIVER;
+  const driver = getDatabaseDriver();
 
   // Explicit driver selection
   if (driver === "better-sqlite3") {
@@ -109,8 +109,10 @@ async function createDB(dbPath: string): Promise<DrizzleDB> {
 
 export async function getDB() {
   if (!dbPromise) {
-    const dbUrl = process.env.DATABASE_URL ?? `file:${join(DATA_DIR, "marinara-engine.db")}`;
-    const dbPath = dbUrl.replace(/^file:/, "");
+    const dbPath = getDatabaseFilePath();
+    if (!dbPath) {
+      throw new Error("DATABASE_URL must resolve to a file-backed SQLite database");
+    }
     dbPromise = createDB(dbPath);
   }
   return dbPromise;

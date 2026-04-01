@@ -4,8 +4,7 @@
 import type { BaseLLMProvider, ChatMessage, LLMToolDefinition, LLMToolCall } from "../llm/base-provider.js";
 import type { AgentResult, AgentContext, AgentResultType } from "@marinara-engine/shared";
 import { getDefaultAgentPrompt } from "@marinara-engine/shared";
-
-const VERBOSE = process.env.DEBUG_AGENTS === "1" || process.env.DEBUG_AGENTS === "true";
+import { isDebugAgentsEnabled } from "../../config/runtime-config.js";
 
 /** Strip HTML/XML-style tags (e.g. <div style="..."> <br> <speaker>) from text to save tokens. */
 function stripHtmlTags(text: string): string {
@@ -94,7 +93,7 @@ export async function executeAgent(
 
     // Call LLM (streaming to avoid proxy timeouts, no tools)
     console.log(`[agent] ${config.type} (${config.name}) — ${model}`);
-    if (VERBOSE) {
+    if (isDebugAgentsEnabled()) {
       for (const msg of messages) {
         console.log(`[agent] [${msg.role}] ${msg.content}`);
       }
@@ -117,7 +116,7 @@ export async function executeAgent(
     const durationMs = Date.now() - startTime;
 
     console.log(`[agent] ${config.type} done (${responseText.length} chars, ${durationMs}ms)`);
-    if (VERBOSE) {
+    if (isDebugAgentsEnabled()) {
       console.log(`[agent] ${responseText}`);
     }
 
@@ -264,7 +263,7 @@ export async function executeAgentBatch(
       `[agent-batch] maxTokens: ${batchMaxTokens} (${maxTokensPerAgent} × ${configs.length} agents, floor 16384)`,
     );
 
-    if (VERBOSE) {
+    if (isDebugAgentsEnabled()) {
       console.log(`\n[agent-batch] ═══ BATCH PROMPT — [${configs.map((c) => c.type).join(", ")}] — ${model} ═══`);
       for (const msg of messages) {
         console.log(`[agent-batch] [${msg.role}] ${msg.content}`);
@@ -293,7 +292,7 @@ export async function executeAgentBatch(
     const totalTokens = result.usage?.totalTokens ?? 0;
 
     console.log(`[agent-batch] Got response (${responseText.length} chars, ${durationMs}ms, ${totalTokens} tokens)`);
-    if (VERBOSE) {
+    if (isDebugAgentsEnabled()) {
       console.log(`[agent-batch] ${responseText}`);
     }
 

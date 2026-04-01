@@ -7,19 +7,16 @@
 //
 //  Priority:
 //    1. DATA_DIR environment variable  (explicit override)
-//    2. <server-package-root>/data     (deterministic default)
+//    2. <monorepo-root>/data           (deterministic default)
 // ──────────────────────────────────────────────
-import { dirname, resolve } from "path";
-import { fileURLToPath } from "url";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-// Walk up from utils/ → src|dist → package root
-const SERVER_ROOT = resolve(__dirname, "../..");
+import { getDataDir as getConfiguredDataDir } from "../config/runtime-config.js";
 
 /**
  * Absolute path to the runtime data directory.
  * Contains: DB, gallery images, avatars, backgrounds, sprites, fonts, knowledge-sources.
  */
-export const DATA_DIR = process.env.DATA_DIR ?? resolve(SERVER_ROOT, "data");
+export function getDataDir() {
+  return getConfiguredDataDir();
+}
+
+export const DATA_DIR = getDataDir();

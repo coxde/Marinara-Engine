@@ -6,6 +6,7 @@
   "author": "Marianna",
   "license": "AGPL-3.0",
   "type": "module",
+  "packageManager": "pnpm@10.30.3",
   "engines": {
     "node": ">=20",
     "pnpm": ">=9"
@@ -18,14 +19,17 @@
     "build:shared": "pnpm --filter @marinara-engine/shared build",
     "build:server": "pnpm --filter @marinara-engine/server build",
     "build:client": "pnpm --filter @marinara-engine/client build",
+    "check": "pnpm lint && pnpm build",
     "start": "node packages/server/dist/index.js",
     "format": "prettier --write \"packages/**/*.{ts,tsx}\"",
     "lint": "pnpm -r run lint",
     "test": "pnpm -r run test",
+    "version:sync": "node ./scripts/sync-version.mjs",
+    "version:check": "node ./scripts/check-version-drift.mjs",
     "db:push": "pnpm --filter @marinara-engine/server db:push",
     "db:generate": "pnpm --filter @marinara-engine/server db:generate",
     "db:migrate": "pnpm --filter @marinara-engine/server db:migrate",
-    "clean": "pnpm -r run clean && rm -rf node_modules"
+    "clean": "pnpm -r --if-present run clean && node ./scripts/clean-workspace.mjs"
   },
   "devDependencies": {
     "esbuild": "^0.27.3",
