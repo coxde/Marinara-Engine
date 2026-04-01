@@ -22,7 +22,7 @@ import android.widget.TextView;
 
 public class MainActivity extends Activity {
 
-    private static final String SERVER_URL = "http://localhost:7860";
+    private static final String SERVER_URL = BuildConfig.MARINARA_SERVER_URL;
     private static final int RETRY_DELAY_MS = 2000;
     private static final int FILE_CHOOSER_REQUEST = 1001;
 

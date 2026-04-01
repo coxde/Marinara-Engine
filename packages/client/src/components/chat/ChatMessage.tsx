@@ -121,8 +121,6 @@ interface ChatMessageProps {
 const HEADING_RE = /^(#{1,6})\s+(.+)$/;
 /** Regex to match horizontal rules: *** / --- (3+ chars, standalone line). */
 const HR_LINE_RE = /^(?:\*{3,}|-{3,})$/;
-/** Regex to match markdown images: ![alt](url) */
-const MD_IMAGE_RE = /!\[([^\]]*)\]\((https?:\/\/[^)]+)\)/g;
 /** Regex to match a standalone image line (entire line is just one image). */
 const MD_IMAGE_LINE_RE = /^!\[([^\]]*)\]\((https?:\/\/[^)]+)\)$/;
 

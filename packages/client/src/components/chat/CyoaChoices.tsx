@@ -8,11 +8,6 @@ import { useGenerate } from "../../hooks/use-generate";
 import { useChatStore } from "../../stores/chat.store";
 import type { Message } from "@marinara-engine/shared";
 
-interface CyoaChoice {
-  label: string;
-  text: string;
-}
-
 interface Props {
   messages?: Message[];
 }

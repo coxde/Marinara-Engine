@@ -168,7 +168,7 @@ export function LorebookMakerModal({ open, onClose }: Props) {
         if (targetLorebookId !== "__new__") {
           setSaved(true);
         }
-      } else if (!error) {
+      } else {
         setError("Generated text wasn't valid JSON. You can try again.");
       }
     } catch (err) {
@@ -180,7 +180,7 @@ export function LorebookMakerModal({ open, onClose }: Props) {
       setBatchProgress(null);
       abortRef.current = null;
     }
-  }, [prompt, connectionId, entryCount, targetLorebookId]);
+  }, [prompt, connectionId, entryCount, targetLorebookId, qc]);
 
   const handleSaveAsNew = async () => {
     if (!generated) return;

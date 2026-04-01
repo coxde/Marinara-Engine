@@ -5,11 +5,17 @@
 # Usage:
 #   ./build-apk.sh          # debug APK
 #   ./build-apk.sh release  # release APK
+#   MARINARA_PORT=9000 ./build-apk.sh
 
 set -euo pipefail
 cd "$(dirname "$0")"
 
 BUILD_TYPE="${1:-debug}"
+MARINARA_PORT="${MARINARA_PORT:-}"
+GRADLE_ARGS=()
+if [ -n "$MARINARA_PORT" ]; then
+    GRADLE_ARGS+=("-PmarinaraPort=${MARINARA_PORT}")
+fi
 
 # Verify ANDROID_HOME
 if [ -z "${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}" ]; then
@@ -57,10 +63,10 @@ else
 fi
 
 if [ "$BUILD_TYPE" = "release" ]; then
-    $GRADLE_CMD assembleRelease
+    $GRADLE_CMD "${GRADLE_ARGS[@]}" assembleRelease
     APK_PATH="app/build/outputs/apk/release/app-release-unsigned.apk"
 else
-    $GRADLE_CMD assembleDebug
+    $GRADLE_CMD "${GRADLE_ARGS[@]}" assembleDebug
     APK_PATH="app/build/outputs/apk/debug/app-debug.apk"
 fi
 

@@ -20,26 +20,24 @@ import { APP_VERSION } from "@marinara-engine/shared";
 import { existsSync } from "fs";
 import { basename, join, resolve, dirname } from "path";
 import { fileURLToPath } from "url";
+import { getCorsConfig, getLogLevel, getNodeEnv } from "./config/runtime-config.js";
 
 const REVALIDATE_FILES = new Set(["index.html"]);
 const NO_STORE_FILES = new Set(["manifest.json", "sw.js", "registerSW.js"]);
 
 export async function buildApp(https?: { cert: Buffer; key: Buffer }) {
+  const corsConfig = getCorsConfig();
   const app = Fastify({
     logger: {
-      level: process.env.LOG_LEVEL ?? "warn",
-      transport:
-        process.env.NODE_ENV !== "production" ? { target: "pino-pretty", options: { colorize: true } } : undefined,
+      level: getLogLevel(),
+      transport: getNodeEnv() !== "production" ? { target: "pino-pretty", options: { colorize: true } } : undefined,
     },
     bodyLimit: 50 * 1024 * 1024, // 50 MB — needed for PNG character cards with embedded avatar
     ...(https && { https }),
   });
 
   // ── Plugins ──
-  await app.register(cors, {
-    origin: process.env.CORS_ORIGINS?.split(",") ?? ["http://localhost:5173"],
-    credentials: true,
-  });
+  await app.register(cors, corsConfig);
 
   await app.register(multipart, {
     limits: {
@@ -106,7 +104,11 @@ export async function buildApp(https?: { cert: Buffer; key: Buffer }) {
     });
 
     // SPA fallback — serve index.html for non-API routes
-    app.setNotFoundHandler(async (_req, reply) => {
+    app.setNotFoundHandler(async (req, reply) => {
+      if (req.raw.url?.startsWith("/api/")) {
+        return reply.status(404).send({ error: "Not Found" });
+      }
+
       reply.header("Cache-Control", "no-cache, must-revalidate");
       reply.header("Pragma", "no-cache");
       reply.header("Expires", "0");

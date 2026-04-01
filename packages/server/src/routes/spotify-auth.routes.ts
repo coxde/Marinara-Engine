@@ -4,6 +4,7 @@
 import type { FastifyInstance } from "fastify";
 import crypto from "node:crypto";
 import { createAgentsStorage } from "../services/storage/agents.storage.js";
+import { getSpotifyRedirectUri } from "../config/runtime-config.js";
 
 // In-flight PKCE verifiers keyed by state param (short-lived, cleaned up on callback)
 const pendingAuth = new Map<
@@ -11,11 +12,8 @@ const pendingAuth = new Map<
   { codeVerifier: string; agentId: string; redirectUri: string; createdAt: number }
 >();
 
-const PORT = parseInt(process.env.PORT ?? "7860", 10);
-const PROTOCOL = process.env.SSL_CERT && process.env.SSL_KEY ? "https" : "http";
-
 function getRedirectUri(): string {
-  return `${PROTOCOL}://127.0.0.1:${PORT}/api/spotify/callback`;
+  return getSpotifyRedirectUri();
 }
 
 const SPOTIFY_SCOPES = [

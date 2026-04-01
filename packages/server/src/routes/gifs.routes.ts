@@ -2,19 +2,19 @@
 // Routes: Giphy GIF proxy (keeps API key server-side)
 // ──────────────────────────────────────────────
 import type { FastifyInstance } from "fastify";
+import { getGifApiKey } from "../config/runtime-config.js";
 
 const GIPHY_BASE = "https://api.giphy.com/v1/gifs";
-const GIPHY_API_KEY = process.env.GIPHY_API_KEY || "BmPN9Hl0X7nVIRStmvSh6dgAdmvyFgvf";
 
 export async function gifsRoutes(app: FastifyInstance) {
   // GET /api/gifs/search?q=hello&limit=20&pos=
   app.get<{
     Querystring: { q?: string; limit?: string; pos?: string };
   }>("/search", async (req, reply) => {
-    if (!GIPHY_API_KEY) {
+    const apiKey = getGifApiKey();
+    if (!apiKey) {
       return reply.status(503).send({ error: "GIF search unavailable — no GIPHY_API_KEY configured" });
     }
-    const key = GIPHY_API_KEY;
 
     const q = (req.query.q ?? "").trim();
     const limit = Math.min(Number(req.query.limit) || 20, 50);
@@ -23,7 +23,7 @@ export async function gifsRoutes(app: FastifyInstance) {
     // Use trending endpoint when no query
     const endpoint = q ? "search" : "trending";
     const params = new URLSearchParams({
-      api_key: key,
+      api_key: apiKey,
       limit: String(limit),
       offset: String(offset),
       rating: "r",

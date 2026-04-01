@@ -189,6 +189,7 @@ Please restart your computer and run this installer again."
     DetailPrint "Node.js found."
   ${EndIf}
 
+
   ; ── Check for pnpm ──
   DetailPrint "Looking for pnpm..."
   nsExec::ExecToStack 'cmd /c where pnpm'

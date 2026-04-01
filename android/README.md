@@ -1,20 +1,24 @@
-# Marinara Engine — Android APK
+# Marinara Engine - Android APK
 
-A lightweight Android WebView wrapper that provides a native app experience for Marinara Engine running on Termux.
+The Android app is a thin WebView wrapper around Marinara Engine running locally in Termux. It is not a standalone server build.
 
 ## How It Works
 
-The APK is a thin client shell — it opens a WebView pointed at `http://localhost:7860` where the Marinara Engine server runs. The server itself still runs in Termux.
+- Start Marinara Engine in Termux with `./start-termux.sh`.
+- The APK opens `http://localhost:<PORT>` inside a fullscreen WebView. The default build-time port is `7860`.
+- The server, launcher updates, and `AUTO_OPEN_BROWSER` behavior are owned by the Termux launcher, not by this APK.
+- Release and versioning policy follows the main repo docs in [../CONTRIBUTING.md](../CONTRIBUTING.md): root `package.json` is canonical, Android `versionName` should match the app version, and `versionCode` must increase for every shipped APK.
+- If you build the APK with a non-default port, Termux must use the same `PORT` value in `.env`.
 
-**Flow:** Start server in Termux → Open the Marinara Engine app
+**Flow:** start the server in Termux, then open the Marinara Engine Android app.
 
 ## Features
 
-- Native app icon on home screen
-- Full-screen standalone experience (no browser chrome)
-- Automatic retry when server isn't ready yet
-- File upload support (character cards, images, etc.)
-- Back button navigates within the app
+- Native app icon on the home screen
+- Full-screen standalone experience without browser chrome
+- Automatic retry while the local server is still starting
+- File upload support for character cards, images, and similar assets
+- Back button navigation inside the WebView
 - External links open in your default browser
 
 ## Building the APK
@@ -22,7 +26,7 @@ The APK is a thin client shell — it opens a WebView pointed at `http://localho
 ### Prerequisites
 
 - **Java 17+** — `brew install openjdk@17` (macOS) or `pkg install openjdk-17` (Termux)
-- **Android SDK** — Set `ANDROID_HOME` environment variable
+- **Android SDK** — Set the `ANDROID_HOME` environment variable
 - **Gradle** — `brew install gradle` (macOS) or `pkg install gradle` (Termux)
 
 ### Build
@@ -35,9 +39,12 @@ cd android
 
 # Release APK
 ./build-apk.sh release
+
+# Optional: build against a different local server port
+MARINARA_PORT=9000 ./build-apk.sh
 ```
 
-The APK will be at:
+Build outputs:
 
 - Debug: `app/build/outputs/apk/debug/app-debug.apk`
 - Release: `app/build/outputs/apk/release/app-release-unsigned.apk`
@@ -48,7 +55,7 @@ The APK will be at:
 # Via ADB
 adb install app/build/outputs/apk/debug/app-debug.apk
 
-# Or transfer the APK file to your phone and open it
+# Or transfer the APK file to your phone and open it there
 ```
 
 ## Building on Termux (on-device)
@@ -75,9 +82,11 @@ cd android
    ./start-termux.sh
    ```
 
-2. Open the **Marinara Engine** app from your home screen
-3. The app will show "Connecting…" until the server is ready, then load automatically
+2. Open the **Marinara Engine** app from your home screen.
+3. The app shows "Connecting..." until the local server is ready, then loads automatically.
 
-## Pre-built APK
+Because the APK points at `http://localhost:<PORT>`, it only works while the Marinara Engine server is running on the same Android device and using the same port value.
 
-Pre-built APKs are available on the [Releases](https://github.com/nicholasgriffintn/marinara-engine/releases) page. Download and install — no build tools needed.
+## Pre-built APKs
+
+When maintainers attach them to a tagged release, pre-built APKs are available on the main [Releases](https://github.com/SpicyMarinara/Marinara-Engine/releases) page.

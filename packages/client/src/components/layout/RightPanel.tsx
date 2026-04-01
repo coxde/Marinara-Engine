@@ -1,18 +1,30 @@
 // ──────────────────────────────────────────────
 // Layout: Right Panel (polished with panel transitions)
 // ──────────────────────────────────────────────
+import { lazy, Suspense, type ComponentType, type LazyExoticComponent, type ReactNode } from "react";
 import { X, Users, BookOpen, FileText, Link, Sparkles, Settings, UserCircle, Bot } from "lucide-react";
 import { useUIStore } from "../../stores/ui.store";
-import { CharactersPanel } from "../panels/CharactersPanel";
-import { LorebooksPanel } from "../panels/LorebooksPanel";
-import { PresetsPanel } from "../panels/PresetsPanel";
-import { ConnectionsPanel } from "../panels/ConnectionsPanel";
-import { AgentsPanel } from "../panels/AgentsPanel";
-import { PersonasPanel } from "../panels/PersonasPanel";
-import { SettingsPanel } from "../panels/SettingsPanel";
-import { BotBrowserPanel } from "../panels/BotBrowserPanel";
 
-const PANEL_CONFIG: Record<string, { title: string; icon: React.ReactNode; gradient: string }> = {
+const CharactersPanel = lazy(() =>
+  import("../panels/CharactersPanel").then((module) => ({ default: module.CharactersPanel })),
+);
+const LorebooksPanel = lazy(() =>
+  import("../panels/LorebooksPanel").then((module) => ({ default: module.LorebooksPanel })),
+);
+const PresetsPanel = lazy(() => import("../panels/PresetsPanel").then((module) => ({ default: module.PresetsPanel })));
+const ConnectionsPanel = lazy(() =>
+  import("../panels/ConnectionsPanel").then((module) => ({ default: module.ConnectionsPanel })),
+);
+const AgentsPanel = lazy(() => import("../panels/AgentsPanel").then((module) => ({ default: module.AgentsPanel })));
+const PersonasPanel = lazy(() =>
+  import("../panels/PersonasPanel").then((module) => ({ default: module.PersonasPanel })),
+);
+const SettingsPanel = lazy(() => import("../panels/SettingsPanel").then((module) => ({ default: module.SettingsPanel })));
+const BotBrowserPanel = lazy(() =>
+  import("../panels/BotBrowserPanel").then((module) => ({ default: module.BotBrowserPanel })),
+);
+
+const PANEL_CONFIG: Record<string, { title: string; icon: ReactNode; gradient: string }> = {
   "bot-browser": { title: "Browser", icon: <Bot size="0.875rem" />, gradient: "from-cyan-400 to-blue-500" },
   characters: { title: "Characters", icon: <Users size="0.875rem" />, gradient: "from-pink-400 to-rose-500" },
   lorebooks: { title: "Lorebooks", icon: <BookOpen size="0.875rem" />, gradient: "from-amber-400 to-orange-500" },
@@ -23,7 +35,7 @@ const PANEL_CONFIG: Record<string, { title: string; icon: React.ReactNode; gradi
   settings: { title: "Settings", icon: <Settings size="0.875rem" />, gradient: "from-gray-400 to-gray-500" },
 };
 
-const PANELS: Record<string, React.FC> = {
+const PANELS: Record<string, LazyExoticComponent<ComponentType>> = {
   "bot-browser": BotBrowserPanel,
   characters: CharactersPanel,
   lorebooks: LorebooksPanel,
@@ -36,6 +48,10 @@ const PANELS: Record<string, React.FC> = {
 
 // Module-level set survives component remounts (e.g. mobile AnimatePresence unmount/remount)
 const mountedPanels = new Set<string>();
+
+function PanelFallback() {
+  return <div className="flex h-full items-center justify-center text-sm text-[var(--muted-foreground)]">Loading...</div>;
+}
 
 export function RightPanel() {
   const panel = useUIStore((s) => s.rightPanel);
@@ -83,7 +99,9 @@ export function RightPanel() {
               className={`absolute inset-0 overflow-y-auto ${active ? "" : "hidden"}`}
               aria-hidden={!active}
             >
-              <PanelComp />
+              <Suspense fallback={active ? <PanelFallback /> : null}>
+                <PanelComp />
+              </Suspense>
             </div>
           );
         })}
